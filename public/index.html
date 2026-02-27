@@ -1,0 +1,5609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTRL SHIFT Vol. 9 — Your Matches</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface-2: #1a1a24;
+  --border: #2a2a3a;
+  --text: #e8e8f0;
+  --text-dim: #8888a0;
+  --accent: #c8ff00;
+  --accent-dim: #c8ff0022;
+  --pink: #ff3d8e;
+  --blue: #3d8eff;
+  --purple: #8e3dff;
+}
+
+html { font-size: 16px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.noise {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-orb {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glow-orb.one { background: var(--accent); top: -200px; right: -100px; }
+.glow-orb.two { background: var(--pink); bottom: -200px; left: -150px; }
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 48px 0 40px;
+}
+
+.header-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.header-label::before, .header-label::after {
+  content: '';
+  width: 40px;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.4;
+}
+
+.header h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.header h1 .highlight {
+  background: linear-gradient(135deg, var(--accent), #a0ff00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header .subtitle {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+/* Search / Landing */
+.search-section {
+  margin-top: 20px;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.search-box input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.search-box input::placeholder { color: var(--text-dim); }
+
+.search-results {
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.search-results::-webkit-scrollbar { width: 4px; }
+.search-results::-webkit-scrollbar-track { background: transparent; }
+.search-results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.search-result-item {
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: var(--surface-2); }
+
+.search-result-item .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.search-result-item .info { flex: 1; }
+.search-result-item .info .name { font-size: 0.85rem; font-weight: 700; }
+.search-result-item .info .role { font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }
+
+/* Profile View */
+.profile-section {
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 24px;
+  transition: color 0.2s;
+  letter-spacing: 0.05em;
+}
+
+.back-btn:hover { color: var(--accent); }
+
+.profile-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--pink), var(--blue));
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  margin: 0 auto 16px;
+  color: var(--bg);
+}
+
+.profile-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.profile-role {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.tag {
+  font-size: 0.65rem;
+  padding: 5px 10px;
+  border-radius: 100px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.tag.accent {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* Matches */
+.matches-header {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.matches-header .count {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  background: var(--accent);
+  color: var(--bg);
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-weight: 700;
+}
+
+.match-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 12px;
+  transition: border-color 0.3s, transform 0.2s;
+  animation: fadeUp 0.4s ease both;
+}
+
+.match-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.match-card.top-strong {
+  border-color: #c8ff0066;
+  background:
+    linear-gradient(180deg, rgba(200, 255, 0, 0.08) 0%, rgba(200, 255, 0, 0.02) 100%),
+    var(--surface);
+}
+
+.match-card-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.match-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  color: var(--bg);
+}
+
+.match-info { flex: 1; }
+.match-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+.match-role { font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }
+
+.match-score {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.match-score.high { background: #c8ff0022; color: var(--accent); border: 1px solid #c8ff0044; }
+.match-score.med { background: #3d8eff22; color: var(--blue); border: 1px solid #3d8eff44; }
+
+.match-reason {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.55;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  border-left: 2px solid var(--accent);
+}
+
+.match-shared {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.shared-tag {
+  font-size: 0.6rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+/* No matches */
+.no-matches {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-dim);
+}
+
+.no-matches .emoji { font-size: 2.5rem; margin-bottom: 16px; }
+.no-matches p { font-size: 0.85rem; line-height: 1.6; }
+
+/* Group label */
+.group-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 28px 0 12px;
+  padding-left: 4px;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 40px 0 20px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+/* Mobile polish */
+@media (max-width: 480px) {
+  .container { padding: 16px 16px 60px; }
+  .header { padding: 32px 0 28px; }
+  .profile-card { padding: 24px 16px; }
+  .match-card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="noise"></div>
+<div class="glow-orb one"></div>
+<div class="glow-orb two"></div>
+
+<div class="container" id="app"></div>
+
+<script>
+// ============================================================
+// MATCH DATA — All guest matches embedded
+// ============================================================
+const GUESTS = {
+  "adriana martinez": {
+    "name": "Adriana Martinez",
+    "role": "Producer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🤝 Hiring / looking for talent",
+      "🧑‍🏫 Teaching / mentoring"
+    ],
+    "tools": "Friends",
+    "matches": [
+      {
+        "name": "Fayeque Townsend-Rahman",
+        "role": "Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🤝 Hiring / looking for talent.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🤝 Hiring / looking for talent",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Hammad Khan",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧑‍🏫 Teaching / mentoring. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Louna Alouzi",
+        "role": "Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🤝 Hiring / looking for talent. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🤝 Hiring / looking for talent"
+        ]
+      },
+      {
+        "name": "Marcelo",
+        "role": "Founder, Creator, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧑‍🏫 Teaching / mentoring. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Nye Dafalla",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🤝 Hiring / looking for talent. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🤝 Hiring / looking for talent"
+        ]
+      }
+    ]
+  },
+  "adrienne": {
+    "name": "Adrienne",
+    "role": "Creator",
+    "interests": [
+      "🎭 Story / writing",
+      "🧑‍🏫 Teaching / mentoring",
+      "🌱 Beginner-friendly"
+    ],
+    "tools": "Google Workspace / Substack",
+    "matches": [
+      {
+        "name": "Linda",
+        "role": "Curious",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring. Both use Substack.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring",
+          "🔧 Substack"
+        ]
+      },
+      {
+        "name": "Kumsal Obuz",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧑‍🏫 Teaching / mentoring and 🌱 Beginner-friendly. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧑‍🏫 Teaching / mentoring",
+          "🌱 Beginner-friendly"
+        ]
+      },
+      {
+        "name": "Marcelo",
+        "role": "Founder, Creator, Developer",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Ronit Novak",
+        "role": "Founder",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      }
+    ]
+  },
+  "affan": {
+    "name": "Affan",
+    "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🎛️ TouchDesigner / visuals",
+      "🪩 Live experiences / events",
+      "🎥 Video / Motion",
+      "🧪 Tool builder / open source"
+    ],
+    "tools": "All of them!",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎛️ TouchDesigner / visuals. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🪩 Live experiences / events. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎛️ TouchDesigner / visuals. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🪩 Live experiences / events. Both use ALL. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion",
+          "🔧 ALL"
+        ]
+      },
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎛️ TouchDesigner / visuals. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎛️ TouchDesigner / visuals",
+          "🎥 Video / Motion"
+        ]
+      }
+    ]
+  },
+  "alex morales": {
+    "name": "Alex Morales",
+    "role": "Developer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🤝 Hiring / looking for talent"
+    ],
+    "tools": "Codex",
+    "matches": [
+      {
+        "name": "Joel Nwamba",
+        "role": "Other, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      },
+      {
+        "name": "Nye Dafalla",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      },
+      {
+        "name": "Louna Alouzi",
+        "role": "Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Ashwin Kamath",
+        "role": "Developer, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      }
+    ]
+  },
+  "andriy kourinnyi": {
+    "name": "Andriy Kourinnyi",
+    "role": "Developer",
+    "interests": [
+      "🧠 AI agents / automation"
+    ],
+    "tools": "Claude, kimi",
+    "matches": [
+      {
+        "name": "Fatima",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use KIMI. Both prefer small groups networking at events.",
+        "strength": "med",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 KIMI"
+        ]
+      },
+      {
+        "name": "Jasminee Persaud",
+        "role": "Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use Claude. Both prefer small groups networking at events.",
+        "strength": "med",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Mare",
+        "role": "Designer",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use Claude. Both prefer small groups networking at events.",
+        "strength": "med",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use Claude. Both prefer small groups networking at events.",
+        "strength": "med",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use Claude. Both prefer small groups networking at events.",
+        "strength": "med",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      }
+    ]
+  },
+  "anna chang": {
+    "name": "Anna Chang",
+    "role": "Creator",
+    "interests": [
+      "🎭 Story / writing"
+    ],
+    "tools": "Claude.ai",
+    "matches": [
+      {
+        "name": "Dennis Mohr",
+        "role": "Creator, Producer",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Jude",
+        "role": "Creator, Artist, Founder",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Keatan",
+        "role": "Creator",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Linda",
+        "role": "Curious",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Marcelo",
+        "role": "Founder, Creator, Developer",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      }
+    ]
+  },
+  "anthony machula": {
+    "name": "Anthony Machula",
+    "role": "Founder",
+    "interests": [
+      "🪩 Live experiences / events",
+      "🕹️ Games / Interactive",
+      "🧊 3D / CG"
+    ],
+    "tools": "",
+    "matches": [
+      {
+        "name": "Sophie Jiang",
+        "role": "Founder, Designer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🕹️ Games / Interactive. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive",
+          "🧊 3D / CG"
+        ]
+      },
+      {
+        "name": "Harinie",
+        "role": "Creator, Artist, Founder, Student, Producer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🕹️ Games / Interactive. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Hugo Voss",
+        "role": "Designer",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🧊 3D / CG. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🧊 3D / CG"
+        ]
+      },
+      {
+        "name": "Kumsal Obuz",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🧊 3D / CG. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🧊 3D / CG"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🕹️ Games / Interactive. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive"
+        ]
+      }
+    ]
+  },
+  "arthur yeung": {
+    "name": "Arthur Yeung",
+    "role": "Producer",
+    "interests": [
+      "🎥 Video / Motion",
+      "🕹️ Games / Interactive",
+      "🤝 Hiring / looking for talent"
+    ],
+    "tools": "Grok, ChatGPT, Gemini/veo",
+    "matches": [
+      {
+        "name": "Yura Savchenko",
+        "role": "Developer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive. Both use Gemini. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive",
+          "🔧 Gemini"
+        ]
+      },
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Thiago Carneiro",
+        "role": "Artist, Designer, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Dafne Hernandez",
+        "role": "Designer, Artist, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Fayeque Townsend-Rahman",
+        "role": "Other",
+        "reason": "Shared interests in 🎥 Video / Motion and 🤝 Hiring / looking for talent.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🤝 Hiring / looking for talent"
+        ]
+      }
+    ]
+  },
+  "asar qadir": {
+    "name": "Asar Qadir",
+    "role": "Founder",
+    "interests": [
+      "🎧 Music / sound",
+      "🎥 Video / Motion"
+    ],
+    "tools": "Harmix Search",
+    "matches": [
+      {
+        "name": "Jordan Dutchak",
+        "role": "Founder",
+        "reason": "Shared interests in 🎧 Music / sound and 🎥 Video / Motion.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎧 Music / sound and 🎥 Video / Motion.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion. Both prefer intros please networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🎥 Video / Motion. Both prefer intros please networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 🎥 Video / Motion. Both prefer intros please networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎥 Video / Motion"
+        ]
+      }
+    ]
+  },
+  "ashwin kamath": {
+    "name": "Ashwin Kamath",
+    "role": "Developer, Other",
+    "interests": [
+      "🧪 Tool builder / open source",
+      "🧠 AI agents / automation"
+    ],
+    "tools": "Ollama + code and a bunch of other cybersecurity focused stuff",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use OF. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 OF"
+        ]
+      },
+      {
+        "name": "Tomi",
+        "role": "Developer, Creator, Founder, Curious",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use CODE. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Winston Chow",
+        "role": "Developer, Designer, Artist, Curious",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use CODE. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Jasminee Persaud",
+        "role": "Curious",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use AND.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 AND"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use CODE.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 CODE"
+        ]
+      }
+    ]
+  },
+  "carlos ibarra": {
+    "name": "Carlos Ibarra",
+    "role": "Artist, Founder, Producer",
+    "interests": [
+      "🪩 Live experiences / events",
+      "🎥 Video / Motion",
+      "🧊 3D / CG"
+    ],
+    "tools": "Arena Blender Adobe Suit",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎥 Video / Motion.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion",
+          "🧊 3D / CG"
+        ]
+      },
+      {
+        "name": "Dafne Hernandez",
+        "role": "Designer, Artist, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧊 3D / CG. Both use Adobe. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧊 3D / CG",
+          "🔧 Adobe"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎥 Video / Motion. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Jordan Dutchak",
+        "role": "Founder",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎥 Video / Motion. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎥 Video / Motion. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion"
+        ]
+      }
+    ]
+  },
+  "charlotte townsend-rahman": {
+    "name": "Charlotte Townsend-Rahman",
+    "role": "Other",
+    "interests": [],
+    "tools": "",
+    "matches": [
+      {
+        "name": "Adriana Martinez",
+        "role": "Producer",
+        "reason": "Strong potential for a cross-disciplinary intro at CTRL SHIFT.",
+        "strength": "med",
+        "shared": []
+      },
+      {
+        "name": "Adrienne",
+        "role": "Creator",
+        "reason": "Strong potential for a cross-disciplinary intro at CTRL SHIFT.",
+        "strength": "med",
+        "shared": []
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Strong potential for a cross-disciplinary intro at CTRL SHIFT.",
+        "strength": "med",
+        "shared": []
+      },
+      {
+        "name": "Alex Morales",
+        "role": "Developer",
+        "reason": "Strong potential for a cross-disciplinary intro at CTRL SHIFT.",
+        "strength": "med",
+        "shared": []
+      },
+      {
+        "name": "Andriy Kourinnyi",
+        "role": "Developer",
+        "reason": "Strong potential for a cross-disciplinary intro at CTRL SHIFT.",
+        "strength": "med",
+        "shared": []
+      }
+    ]
+  },
+  "dafne hernandez": {
+    "name": "Dafne Hernandez",
+    "role": "Designer, Artist, Creator",
+    "interests": [
+      "🕹️ Games / Interactive",
+      "🧊 3D / CG",
+      "🎥 Video / Motion"
+    ],
+    "tools": "Adobe Suite zBrush",
+    "matches": [
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🧊 3D / CG.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🧊 3D / CG",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Thiago Carneiro",
+        "role": "Artist, Designer, Creator",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🧊 3D / CG.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🧊 3D / CG",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Carlos Ibarra",
+        "role": "Artist, Founder, Producer",
+        "reason": "Shared interests in 🧊 3D / CG and 🎥 Video / Motion. Both use Adobe. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🎥 Video / Motion",
+          "🔧 Adobe"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🎥 Video / Motion. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Anthony Machula",
+        "role": "Founder",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🧊 3D / CG.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🧊 3D / CG"
+        ]
+      }
+    ]
+  },
+  "dennis mohr": {
+    "name": "Dennis Mohr",
+    "role": "Creator, Producer",
+    "interests": [
+      "🎭 Story / writing"
+    ],
+    "tools": "Freekpik Veo",
+    "matches": [
+      {
+        "name": "Meg Button",
+        "role": "Designer, Artist, Founder, Curious",
+        "reason": "Shared interests in 🎭 Story / writing. Both use VEO.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing",
+          "🔧 VEO"
+        ]
+      },
+      {
+        "name": "Anna Chang",
+        "role": "Creator",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Joel Nwamba",
+        "role": "Other, Developer",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer small groups networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Jude",
+        "role": "Creator, Artist, Founder",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Keatan",
+        "role": "Creator",
+        "reason": "Shared interests in 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "med",
+        "shared": [
+          "🎭 Story / writing"
+        ]
+      }
+    ]
+  },
+  "disha sareen": {
+    "name": "Disha Sareen",
+    "role": "Creator",
+    "interests": [
+      "🧪 Tool builder / open source",
+      "🧠 AI agents / automation",
+      "🎥 Video / Motion",
+      "🪩 Live experiences / events"
+    ],
+    "tools": "",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Mary Li",
+        "role": "Designer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Michael Spina",
+        "role": "Creator, Curious",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Nimalan Thavandiran",
+        "role": "Artist, Designer, Founder",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events"
+        ]
+      }
+    ]
+  },
+  "fatima": {
+    "name": "Fatima",
+    "role": "Founder",
+    "interests": [
+      "💼 Looking for work",
+      "🧠 AI agents / automation",
+      "🎥 Video / Motion"
+    ],
+    "tools": "Notion, Gemini, Kimi,",
+    "matches": [
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 💼 Looking for work and 🧠 AI agents / automation. Both use Gemini.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Gemini"
+        ]
+      },
+      {
+        "name": "JP",
+        "role": "Creator",
+        "reason": "Shared interests in 💼 Looking for work and 🧠 AI agents / automation.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Louna Alouzi",
+        "role": "Other",
+        "reason": "Shared interests in 💼 Looking for work and 🧠 AI agents / automation. Both use Notion and Gemini.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🧠 AI agents / automation",
+          "🔧 Notion",
+          "🔧 Gemini"
+        ]
+      },
+      {
+        "name": "Sahil Lulla",
+        "role": "Founder, Developer, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Gemini. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Gemini"
+        ]
+      },
+      {
+        "name": "Yura Savchenko",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Gemini. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Gemini"
+        ]
+      }
+    ]
+  },
+  "fayeque townsend-rahman": {
+    "name": "Fayeque Townsend-Rahman",
+    "role": "Other",
+    "interests": [
+      "🎥 Video / Motion",
+      "🧠 AI agents / automation",
+      "🤝 Hiring / looking for talent",
+      "🧑‍🏫 Teaching / mentoring"
+    ],
+    "tools": "MidJourney Kling Seedance",
+    "matches": [
+      {
+        "name": "Adriana Martinez",
+        "role": "Producer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🤝 Hiring / looking for talent.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🤝 Hiring / looking for talent",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Sahil Lulla",
+        "role": "Founder, Developer, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both use Kling and Seedance.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🔧 Kling",
+          "🔧 Seedance"
+        ]
+      },
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both use Midjourney.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🔧 Midjourney"
+        ]
+      },
+      {
+        "name": "Shelley",
+        "role": "Designer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both use Kling.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🔧 Kling"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation"
+        ]
+      }
+    ]
+  },
+  "fongkikid": {
+    "name": "fongkikid",
+    "role": "Artist, Designer, Producer",
+    "interests": [
+      "💼 Looking for work",
+      "🪩 Live experiences / events",
+      "🎛️ TouchDesigner / visuals"
+    ],
+    "tools": "TouchDesigner, Resolume, Premiere Pro",
+    "matches": [
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 💼 Looking for work and 🪩 Live experiences / events. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Jude",
+        "role": "Creator, Artist, Founder",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎛️ TouchDesigner / visuals. Both use PRO. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals",
+          "🔧 PRO"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎛️ TouchDesigner / visuals. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 💼 Looking for work and 🎛️ TouchDesigner / visuals. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎛️ TouchDesigner / visuals. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      }
+    ]
+  },
+  "gerald akenten": {
+    "name": "Gerald Akenten",
+    "role": "Curious, Other, Developer",
+    "interests": [
+      "🕹️ Games / Interactive",
+      "🎧 Music / sound",
+      "💼 Looking for work"
+    ],
+    "tools": "JetBrains IDE(RustRover), Claude Code, Cursor, Github copilot",
+    "matches": [
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 🎧 Music / sound and 💼 Looking for work. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Winston Chow",
+        "role": "Developer, Designer, Artist, Curious",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 💼 Looking for work. Both use CODE and Github.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "💼 Looking for work",
+          "🔧 CODE",
+          "🔧 Github"
+        ]
+      },
+      {
+        "name": "Paul Gadi",
+        "role": "Founder, Developer, Designer, Creator",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 💼 Looking for work. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Radi Huq",
+        "role": "Artist, Developer",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🎧 Music / sound. Both use Cursor.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🎧 Music / sound",
+          "🔧 Cursor"
+        ]
+      },
+      {
+        "name": "Harinie",
+        "role": "Creator, Artist, Founder, Student, Producer",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🎧 Music / sound.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🎧 Music / sound"
+        ]
+      }
+    ]
+  },
+  "hammad khan": {
+    "name": "Hammad Khan",
+    "role": "Developer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧑‍🏫 Teaching / mentoring",
+      "🧪 Tool builder / open source"
+    ],
+    "tools": "",
+    "matches": [
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧑‍🏫 Teaching / mentoring. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧑‍🏫 Teaching / mentoring",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Adriana Martinez",
+        "role": "Producer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧑‍🏫 Teaching / mentoring. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Jasminee Persaud",
+        "role": "Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      }
+    ]
+  },
+  "harinie": {
+    "name": "Harinie",
+    "role": "Creator, Artist, Founder, Student, Producer",
+    "interests": [
+      "🎧 Music / sound",
+      "🪩 Live experiences / events",
+      "🕹️ Games / Interactive"
+    ],
+    "tools": "intuition, meditation, wellness facilitators, social media, ai, rewiring the mind, authentic storytelling, learning and teaching, music",
+    "matches": [
+      {
+        "name": "Radi Huq",
+        "role": "Artist, Developer",
+        "reason": "Shared interests in 🎧 Music / sound and 🪩 Live experiences / events. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🕹️ Games / Interactive. Both use THE. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive",
+          "🔧 THE"
+        ]
+      },
+      {
+        "name": "Anthony Machula",
+        "role": "Founder",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🕹️ Games / Interactive. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎧 Music / sound and 🪩 Live experiences / events. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Sophie Jiang",
+        "role": "Founder, Designer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🕹️ Games / Interactive. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive"
+        ]
+      }
+    ]
+  },
+  "hugo voss": {
+    "name": "Hugo Voss",
+    "role": "Designer",
+    "interests": [
+      "🧊 3D / CG",
+      "🎛️ TouchDesigner / visuals",
+      "🕹️ Games / Interactive"
+    ],
+    "tools": "Image + Video generation Traditional + AI enabled 3D Modelling",
+    "matches": [
+      {
+        "name": "Sophie Jiang",
+        "role": "Founder, Designer",
+        "reason": "Shared interests in 🧊 3D / CG and 🎛️ TouchDesigner / visuals. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🎛️ TouchDesigner / visuals",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🧊 3D / CG and 🕹️ Games / Interactive. Both use AI.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive",
+          "🔧 AI"
+        ]
+      },
+      {
+        "name": "Anthony Machula",
+        "role": "Founder",
+        "reason": "Shared interests in 🧊 3D / CG and 🕹️ Games / Interactive. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Kumsal Obuz",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🧊 3D / CG and 🕹️ Games / Interactive. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🕹️ Games / Interactive. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🕹️ Games / Interactive"
+        ]
+      }
+    ]
+  },
+  "indranil datta": {
+    "name": "Indranil Datta",
+    "role": "Artist, Designer, Curious",
+    "interests": [
+      "💼 Looking for work",
+      "🎥 Video / Motion",
+      "🎛️ TouchDesigner / visuals",
+      "🧠 AI agents / automation"
+    ],
+    "tools": "Chat GPT, Midjourney, Gemini",
+    "matches": [
+      {
+        "name": "Fatima",
+        "role": "Founder",
+        "reason": "Shared interests in 💼 Looking for work and 🎥 Video / Motion. Both use Gemini.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🔧 Gemini"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎛️ TouchDesigner / visuals. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎛️ TouchDesigner / visuals",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "JP",
+        "role": "Creator",
+        "reason": "Shared interests in 💼 Looking for work and 🎥 Video / Motion. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 💼 Looking for work and 🎛️ TouchDesigner / visuals. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🎛️ TouchDesigner / visuals",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎛️ TouchDesigner / visuals.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎛️ TouchDesigner / visuals",
+          "🧠 AI agents / automation"
+        ]
+      }
+    ]
+  },
+  "jaron andre": {
+    "name": "Jaron Andre",
+    "role": "Developer",
+    "interests": [
+      "🎧 Music / sound",
+      "🧊 3D / CG",
+      "🧪 Tool builder / open source"
+    ],
+    "tools": "Cursor",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎧 Music / sound and 🧊 3D / CG.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "🧊 3D / CG",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 🎧 Music / sound and 🧊 3D / CG. Both use Cursor. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "🧊 3D / CG",
+          "🔧 Cursor"
+        ]
+      },
+      {
+        "name": "Tomi",
+        "role": "Developer, Creator, Founder, Curious",
+        "reason": "Shared interests in 🧊 3D / CG and 🧪 Tool builder / open source. Both use Cursor. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🧪 Tool builder / open source",
+          "🔧 Cursor"
+        ]
+      },
+      {
+        "name": "Nick Fox-Gieg",
+        "role": "Artist, Developer",
+        "reason": "Shared interests in 🧊 3D / CG and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Tyler Sun",
+        "role": "Curious",
+        "reason": "Shared interests in 🎧 Music / sound and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "🧪 Tool builder / open source"
+        ]
+      }
+    ]
+  },
+  "jasminee persaud": {
+    "name": "Jasminee Persaud",
+    "role": "Curious",
+    "interests": [
+      "🌱 Beginner-friendly",
+      "🧪 Tool builder / open source",
+      "🧠 AI agents / automation"
+    ],
+    "tools": "Claude and Chat GPT",
+    "matches": [
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🌱 Beginner-friendly and 🧪 Tool builder / open source. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🌱 Beginner-friendly",
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use Claude. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Nye Dafalla",
+        "role": "Founder",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Tomi",
+        "role": "Developer, Creator, Founder, Curious",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      }
+    ]
+  },
+  "joel nwamba": {
+    "name": "Joel Nwamba",
+    "role": "Other, Developer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🎭 Story / writing",
+      "🤝 Hiring / looking for talent"
+    ],
+    "tools": "ChatGPT",
+    "matches": [
+      {
+        "name": "Alex Morales",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      },
+      {
+        "name": "Nimalan Thavandiran",
+        "role": "Artist, Designer, Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Nye Dafalla",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      },
+      {
+        "name": "Louna Alouzi",
+        "role": "Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Chatgpt.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🔧 Chatgpt"
+        ]
+      }
+    ]
+  },
+  "jordan dutchak": {
+    "name": "Jordan Dutchak",
+    "role": "Founder",
+    "interests": [
+      "🎥 Video / Motion",
+      "🪩 Live experiences / events",
+      "🎧 Music / sound"
+    ],
+    "tools": "Claude",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🪩 Live experiences / events. Both use Claude.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events",
+          "🎧 Music / sound",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🪩 Live experiences / events. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Carlos Ibarra",
+        "role": "Artist, Founder, Producer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🪩 Live experiences / events. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🎥 Video / Motion and 🪩 Live experiences / events. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Shelley",
+        "role": "Designer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🪩 Live experiences / events. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events"
+        ]
+      }
+    ]
+  },
+  "jp": {
+    "name": "JP",
+    "role": "Creator",
+    "interests": [
+      "🧠 AI agents / automation",
+      "💼 Looking for work",
+      "🎥 Video / Motion"
+    ],
+    "tools": "Cursor, Antigravity, NotebookLM",
+    "matches": [
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Fatima",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Cursor and Antigravity. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Cursor",
+          "🔧 Antigravity"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Cursor.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Cursor"
+        ]
+      },
+      {
+        "name": "Yura Savchenko",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Cursor.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Cursor"
+        ]
+      }
+    ]
+  },
+  "jude": {
+    "name": "Jude",
+    "role": "Creator, Artist, Founder",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🎭 Story / writing",
+      "🎛️ TouchDesigner / visuals",
+      "🪩 Live experiences / events"
+    ],
+    "tools": "Gemini Nanobanana Adobe creative pro apps",
+    "matches": [
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎛️ TouchDesigner / visuals. Both use Adobe and Creative. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events",
+          "🔧 Adobe"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎛️ TouchDesigner / visuals. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Minas Adonai",
+        "role": "Founder, Artist",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎛️ TouchDesigner / visuals. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Nimalan Thavandiran",
+        "role": "Artist, Designer, Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      }
+    ]
+  },
+  "keatan": {
+    "name": "Keatan",
+    "role": "Creator",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🎥 Video / Motion",
+      "🎭 Story / writing"
+    ],
+    "tools": "Notion / CapCut",
+    "matches": [
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Meg Button",
+        "role": "Designer, Artist, Founder, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Fatima",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Notion.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Notion"
+        ]
+      },
+      {
+        "name": "Kumsal Obuz",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both use Notion.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🔧 Notion"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion"
+        ]
+      }
+    ]
+  },
+  "kumsal obuz": {
+    "name": "Kumsal Obuz",
+    "role": "Founder, Creator",
+    "interests": [
+      "🧊 3D / CG",
+      "🕹️ Games / Interactive",
+      "🧠 AI agents / automation",
+      "🎭 Story / writing",
+      "🧑‍🏫 Teaching / mentoring"
+    ],
+    "tools": "Godot, Blender, Deepseek, ComfyUI, N8N, Notion",
+    "matches": [
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🧊 3D / CG and 🕹️ Games / Interactive.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive",
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Pip Swartz",
+        "role": "Founder",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🧠 AI agents / automation. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Marcelo",
+        "role": "Founder, Creator, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Keatan",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both use Notion.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🔧 Notion"
+        ]
+      },
+      {
+        "name": "Adrienne",
+        "role": "Creator",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      }
+    ]
+  },
+  "leo tolstikov": {
+    "name": "Leo Tolstikov",
+    "role": "Artist, Designer, Other",
+    "interests": [
+      "🪩 Live experiences / events",
+      "🌱 Beginner-friendly",
+      "🎥 Video / Motion",
+      "🕹️ Games / Interactive",
+      "🎛️ TouchDesigner / visuals"
+    ],
+    "tools": "I talk to my cat. She has all the answers 🐈",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎥 Video / Motion. Both use ALL. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion",
+          "🎛️ TouchDesigner / visuals",
+          "🔧 ALL"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎥 Video / Motion. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🌱 Beginner-friendly. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🌱 Beginner-friendly",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Sophie Jiang",
+        "role": "Founder, Designer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🕹️ Games / Interactive. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Harinie",
+        "role": "Creator, Artist, Founder, Student, Producer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🕹️ Games / Interactive. Both use THE. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🕹️ Games / Interactive",
+          "🔧 THE"
+        ]
+      }
+    ]
+  },
+  "linda": {
+    "name": "Linda",
+    "role": "Curious",
+    "interests": [
+      "🎭 Story / writing",
+      "🎥 Video / Motion",
+      "🧑‍🏫 Teaching / mentoring"
+    ],
+    "tools": "Bluesky, Substack, Claude, ChatGPT",
+    "matches": [
+      {
+        "name": "Marcelo",
+        "role": "Founder, Creator, Developer",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring. Both use Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Adrienne",
+        "role": "Creator",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring. Both use Substack.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring",
+          "🔧 Substack"
+        ]
+      },
+      {
+        "name": "Targiv Roham",
+        "role": "Founder, Creator, Curious",
+        "reason": "Shared interests in 🎭 Story / writing and 🎥 Video / Motion. Both use Chatgpt.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🎥 Video / Motion",
+          "🔧 Chatgpt"
+        ]
+      },
+      {
+        "name": "Keatan",
+        "role": "Creator",
+        "reason": "Shared interests in 🎭 Story / writing and 🎥 Video / Motion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🎭 Story / writing and 🎥 Video / Motion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🎥 Video / Motion"
+        ]
+      }
+    ]
+  },
+  "louna alouzi": {
+    "name": "Louna Alouzi",
+    "role": "Other",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "💼 Looking for work",
+      "🤝 Hiring / looking for talent"
+    ],
+    "tools": "Apollo, CRMs, OpenAI, Notion, Gemini",
+    "matches": [
+      {
+        "name": "Nye Dafalla",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Notion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent",
+          "🔧 Notion"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Notion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "💼 Looking for work",
+          "🔧 Notion"
+        ]
+      },
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "Alex Morales",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      }
+    ]
+  },
+  "luc palombo": {
+    "name": "Luc Palombo",
+    "role": "Artist, Designer, Developer",
+    "interests": [
+      "🎛️ TouchDesigner / visuals",
+      "🪩 Live experiences / events",
+      "🧑‍🏫 Teaching / mentoring"
+    ],
+    "tools": "Three.js, P5, Claude Code/Cursor, Touch Designer, TiXL, Blender. Everything!",
+    "matches": [
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🪩 Live experiences / events. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🪩 Live experiences / events. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🪩 Live experiences / events. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "fongkikid",
+        "role": "Artist, Designer, Producer",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🪩 Live experiences / events. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Jude",
+        "role": "Creator, Artist, Founder",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🪩 Live experiences / events. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events"
+        ]
+      }
+    ]
+  },
+  "marcelo": {
+    "name": "Marcelo",
+    "role": "Founder, Creator, Developer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🎭 Story / writing",
+      "🧑‍🏫 Teaching / mentoring"
+    ],
+    "tools": "Claude Code, Obsidian, Descript, Excalidraw",
+    "matches": [
+      {
+        "name": "Kumsal Obuz",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Mare",
+        "role": "Designer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both use Claude and CODE. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Linda",
+        "role": "Curious",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring. Both use Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Adriana Martinez",
+        "role": "Producer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧑‍🏫 Teaching / mentoring. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Hammad Khan",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧑‍🏫 Teaching / mentoring. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      }
+    ]
+  },
+  "mare": {
+    "name": "Mare",
+    "role": "Designer",
+    "interests": [
+      "🎭 Story / writing",
+      "🧠 AI agents / automation",
+      "💼 Looking for work"
+    ],
+    "tools": "Figma, Figma make, lovable. Learning about Claude code",
+    "matches": [
+      {
+        "name": "Marcelo",
+        "role": "Founder, Creator, Developer",
+        "reason": "Shared interests in 🎭 Story / writing and 🧠 AI agents / automation. Both use Claude and CODE. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧠 AI agents / automation",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Claude and CODE. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Claude and CODE. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Winston Chow",
+        "role": "Developer, Designer, Artist, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Figma and CODE. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Figma",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Claude"
+        ]
+      }
+    ]
+  },
+  "mary li": {
+    "name": "Mary Li",
+    "role": "Designer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🎥 Video / Motion"
+    ],
+    "tools": "figma",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Sahil Lulla",
+        "role": "Founder, Developer, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Robert Mill",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      }
+    ]
+  },
+  "meg button": {
+    "name": "Meg Button",
+    "role": "Designer, Artist, Founder, Curious",
+    "interests": [
+      "🎥 Video / Motion",
+      "🧠 AI agents / automation",
+      "🎭 Story / writing"
+    ],
+    "tools": "krea, freepik, DaVinci, veo, runway etc etc",
+    "matches": [
+      {
+        "name": "Keatan",
+        "role": "Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Targiv Roham",
+        "role": "Founder, Creator, Curious",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing. Both use Davinci. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing",
+          "🔧 Davinci"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation"
+        ]
+      }
+    ]
+  },
+  "michael spina": {
+    "name": "Michael Spina",
+    "role": "Creator, Curious",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🪩 Live experiences / events"
+    ],
+    "tools": "Cursor, custom rooms, antigravity, google docs.",
+    "matches": [
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Cursor. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events",
+          "🔧 Cursor"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events"
+        ]
+      }
+    ]
+  },
+  "miguel twahirwa": {
+    "name": "Miguel Twahirwa",
+    "role": "Founder, Developer, Curious",
+    "interests": [
+      "🧊 3D / CG",
+      "🎧 Music / sound",
+      "🧠 AI agents / automation",
+      "💼 Looking for work"
+    ],
+    "tools": "Claude code cursor and antigravity",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧊 3D / CG and 🎧 Music / sound. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🎧 Music / sound",
+          "🧠 AI agents / automation",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Tomi",
+        "role": "Developer, Creator, Founder, Curious",
+        "reason": "Shared interests in 🧊 3D / CG and 🧠 AI agents / automation. Both use Claude and CODE. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🧠 AI agents / automation",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Gerald Akenten",
+        "role": "Curious, Other, Developer",
+        "reason": "Shared interests in 🎧 Music / sound and 💼 Looking for work. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "JP",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Cursor and Antigravity. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Cursor",
+          "🔧 Antigravity"
+        ]
+      }
+    ]
+  },
+  "minas adonai": {
+    "name": "Minas Adonai",
+    "role": "Founder, Artist",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🎭 Story / writing",
+      "🪩 Live experiences / events"
+    ],
+    "tools": "Bolt.new and Codex",
+    "matches": [
+      {
+        "name": "Jude",
+        "role": "Creator, Artist, Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Nimalan Thavandiran",
+        "role": "Artist, Designer, Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Targiv Roham",
+        "role": "Founder, Creator, Curious",
+        "reason": "Shared interests in 🎭 Story / writing and 🪩 Live experiences / events. Both use AND.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🪩 Live experiences / events",
+          "🔧 AND"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🪩 Live experiences / events. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🪩 Live experiences / events. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events"
+        ]
+      }
+    ]
+  },
+  "miro k": {
+    "name": "Miro K",
+    "role": "Founder, Developer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🎛️ TouchDesigner / visuals",
+      "🎧 Music / sound",
+      "🎥 Video / Motion",
+      "🧊 3D / CG",
+      "🪩 Live experiences / events",
+      "🧪 Tool builder / open source"
+    ],
+    "tools": "Claude Code",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎛️ TouchDesigner / visuals. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎛️ TouchDesigner / visuals",
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎛️ TouchDesigner / visuals. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎛️ TouchDesigner / visuals",
+          "🪩 Live experiences / events",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Tomi",
+        "role": "Developer, Creator, Founder, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧊 3D / CG. Both use Claude and CODE. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧊 3D / CG",
+          "🧪 Tool builder / open source",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎧 Music / sound. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎧 Music / sound",
+          "🧊 3D / CG",
+          "🔧 Claude"
+        ]
+      }
+    ]
+  },
+  "narges mirheydari": {
+    "name": "Narges Mirheydari",
+    "role": "Student",
+    "interests": [
+      "💼 Looking for work"
+    ],
+    "tools": "",
+    "matches": [
+      {
+        "name": "fongkikid",
+        "role": "Artist, Designer, Producer",
+        "reason": "Shared interests in 💼 Looking for work. Both prefer intros please networking at events.",
+        "strength": "med",
+        "shared": [
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 💼 Looking for work. Both prefer intros please networking at events.",
+        "strength": "med",
+        "shared": [
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "JP",
+        "role": "Creator",
+        "reason": "Shared interests in 💼 Looking for work. Both prefer intros please networking at events.",
+        "strength": "med",
+        "shared": [
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 💼 Looking for work. Both prefer intros please networking at events.",
+        "strength": "med",
+        "shared": [
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "Nick Fox-Gieg",
+        "role": "Artist, Developer",
+        "reason": "Shared interests in 💼 Looking for work. Both prefer intros please networking at events.",
+        "strength": "med",
+        "shared": [
+          "💼 Looking for work"
+        ]
+      }
+    ]
+  },
+  "nick fox-gieg": {
+    "name": "Nick Fox-Gieg",
+    "role": "Artist, Developer",
+    "interests": [
+      "💼 Looking for work",
+      "🧊 3D / CG",
+      "🧪 Tool builder / open source"
+    ],
+    "tools": "Blender, ComfyUI, Houdini",
+    "matches": [
+      {
+        "name": "Jaron Andre",
+        "role": "Developer",
+        "reason": "Shared interests in 🧊 3D / CG and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 💼 Looking for work and 🧊 3D / CG. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🧊 3D / CG"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧊 3D / CG and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 💼 Looking for work and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 💼 Looking for work and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🧪 Tool builder / open source"
+        ]
+      }
+    ]
+  },
+  "nimalan thavandiran": {
+    "name": "Nimalan Thavandiran",
+    "role": "Artist, Designer, Founder",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🎭 Story / writing",
+      "🪩 Live experiences / events"
+    ],
+    "tools": "",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Joel Nwamba",
+        "role": "Other, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Jude",
+        "role": "Creator, Artist, Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Minas Adonai",
+        "role": "Founder, Artist",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      }
+    ]
+  },
+  "noah van hart": {
+    "name": "Noah van Hart",
+    "role": "Founder, Designer, Developer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "💼 Looking for work",
+      "🪩 Live experiences / events",
+      "🧪 Tool builder / open source"
+    ],
+    "tools": "Claude, openclaw",
+    "matches": [
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both use Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🪩 Live experiences / events",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 💼 Looking for work. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🪩 Live experiences / events",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🪩 Live experiences / events. Both use Claude. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events",
+          "🧪 Tool builder / open source",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🪩 Live experiences / events. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🪩 Live experiences / events. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events",
+          "🧪 Tool builder / open source"
+        ]
+      }
+    ]
+  },
+  "nye dafalla": {
+    "name": "Nye Dafalla",
+    "role": "Founder",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🤝 Hiring / looking for talent",
+      "🎛️ TouchDesigner / visuals"
+    ],
+    "tools": "Claude, notion",
+    "matches": [
+      {
+        "name": "Louna Alouzi",
+        "role": "Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Notion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent",
+          "🔧 Notion"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Claude.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎛️ TouchDesigner / visuals",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Alex Morales",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      },
+      {
+        "name": "Joel Nwamba",
+        "role": "Other, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🤝 Hiring / looking for talent"
+        ]
+      }
+    ]
+  },
+  "paul gadi": {
+    "name": "Paul Gadi",
+    "role": "Founder, Developer, Designer, Creator",
+    "interests": [
+      "🕹️ Games / Interactive",
+      "💼 Looking for work"
+    ],
+    "tools": "Claude Code",
+    "matches": [
+      {
+        "name": "Gerald Akenten",
+        "role": "Curious, Other, Developer",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 💼 Looking for work. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Winston Chow",
+        "role": "Developer, Designer, Artist, Curious",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 💼 Looking for work. Both use CODE. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "💼 Looking for work",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 💼 Looking for work. Both use Claude and CODE. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Mare",
+        "role": "Designer",
+        "reason": "Shared interests in 💼 Looking for work. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 💼 Looking for work. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      }
+    ]
+  },
+  "pip swartz": {
+    "name": "Pip Swartz",
+    "role": "Founder",
+    "interests": [
+      "🕹️ Games / Interactive",
+      "🧠 AI agents / automation",
+      "🎭 Story / writing"
+    ],
+    "tools": "Agentic browsers, blocking software (for time management)",
+    "matches": [
+      {
+        "name": "Kumsal Obuz",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🧠 AI agents / automation. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🧠 AI agents / automation.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Joel Nwamba",
+        "role": "Other, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Jude",
+        "role": "Creator, Artist, Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Mare",
+        "role": "Designer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎭 Story / writing. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      }
+    ]
+  },
+  "raad seraj": {
+    "name": "Raad Seraj",
+    "role": "Creator",
+    "interests": [
+      "🪩 Live experiences / events",
+      "🎧 Music / sound",
+      "🎭 Story / writing"
+    ],
+    "tools": "midjourney",
+    "matches": [
+      {
+        "name": "Nimalan Thavandiran",
+        "role": "Artist, Designer, Founder",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎭 Story / writing. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Radi Huq",
+        "role": "Artist, Developer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎧 Music / sound. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎧 Music / sound"
+        ]
+      },
+      {
+        "name": "Ronit Novak",
+        "role": "Founder",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎭 Story / writing. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Targiv Roham",
+        "role": "Founder, Creator, Curious",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎭 Story / writing. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Harinie",
+        "role": "Creator, Artist, Founder, Student, Producer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎧 Music / sound.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎧 Music / sound"
+        ]
+      }
+    ]
+  },
+  "radi huq": {
+    "name": "Radi Huq",
+    "role": "Artist, Developer",
+    "interests": [
+      "🕹️ Games / Interactive",
+      "🪩 Live experiences / events",
+      "🎧 Music / sound",
+      "🧠 AI agents / automation"
+    ],
+    "tools": "Cursor, Figma, GSuite, Meta Ads Manager",
+    "matches": [
+      {
+        "name": "Harinie",
+        "role": "Creator, Artist, Founder, Student, Producer",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🪩 Live experiences / events. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🪩 Live experiences / events",
+          "🎧 Music / sound"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎧 Music / sound. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎧 Music / sound",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Michael Spina",
+        "role": "Creator, Curious",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🧠 AI agents / automation. Both use Cursor. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🧠 AI agents / automation",
+          "🔧 Cursor"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 🎧 Music / sound and 🧠 AI agents / automation. Both use Cursor. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎧 Music / sound",
+          "🧠 AI agents / automation",
+          "🔧 Cursor"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🧠 AI agents / automation. Both use Figma. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🧠 AI agents / automation",
+          "🔧 Figma"
+        ]
+      }
+    ]
+  },
+  "robert mill": {
+    "name": "Robert Mill",
+    "role": "Founder",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🎥 Video / Motion"
+    ],
+    "tools": "Claude agents sdk",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Claude.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Sahil Lulla",
+        "role": "Founder, Developer, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Mary Li",
+        "role": "Designer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      }
+    ]
+  },
+  "ronit novak": {
+    "name": "Ronit Novak",
+    "role": "Founder",
+    "interests": [
+      "🎭 Story / writing",
+      "🪩 Live experiences / events",
+      "🧑‍🏫 Teaching / mentoring"
+    ],
+    "tools": "",
+    "matches": [
+      {
+        "name": "Nimalan Thavandiran",
+        "role": "Artist, Designer, Founder",
+        "reason": "Shared interests in 🎭 Story / writing and 🪩 Live experiences / events. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Raad Seraj",
+        "role": "Creator",
+        "reason": "Shared interests in 🎭 Story / writing and 🪩 Live experiences / events. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🧑‍🏫 Teaching / mentoring. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      },
+      {
+        "name": "Targiv Roham",
+        "role": "Founder, Creator, Curious",
+        "reason": "Shared interests in 🎭 Story / writing and 🪩 Live experiences / events. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Adrienne",
+        "role": "Creator",
+        "reason": "Shared interests in 🎭 Story / writing and 🧑‍🏫 Teaching / mentoring.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🧑‍🏫 Teaching / mentoring"
+        ]
+      }
+    ]
+  },
+  "rudy pietrolungo": {
+    "name": "Rudy Pietrolungo",
+    "role": "Designer",
+    "interests": [
+      "🎥 Video / Motion",
+      "🧊 3D / CG",
+      "🕹️ Games / Interactive",
+      "🧠 AI agents / automation",
+      "🎭 Story / writing"
+    ],
+    "tools": "All design related AI tools",
+    "matches": [
+      {
+        "name": "Kumsal Obuz",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🧊 3D / CG and 🕹️ Games / Interactive.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive",
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Sonya",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive. Both use AI.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive",
+          "🎭 Story / writing",
+          "🔧 AI"
+        ]
+      },
+      {
+        "name": "Keatan",
+        "role": "Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Thiago Carneiro",
+        "role": "Artist, Designer, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧊 3D / CG. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Yura Savchenko",
+        "role": "Developer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive",
+          "🧠 AI agents / automation"
+        ]
+      }
+    ]
+  },
+  "rymn wadhwa": {
+    "name": "Rymn Wadhwa",
+    "role": "Developer, Curious, Producer",
+    "interests": [],
+    "tools": "",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Both prefer here with friends networking at events.",
+        "strength": "med",
+        "shared": [
+          "🤝 Here with friends"
+        ]
+      },
+      {
+        "name": "Carlos Ibarra",
+        "role": "Artist, Founder, Producer",
+        "reason": "Both prefer here with friends networking at events.",
+        "strength": "med",
+        "shared": [
+          "🤝 Here with friends"
+        ]
+      },
+      {
+        "name": "Dafne Hernandez",
+        "role": "Designer, Artist, Creator",
+        "reason": "Both prefer here with friends networking at events.",
+        "strength": "med",
+        "shared": [
+          "🤝 Here with friends"
+        ]
+      },
+      {
+        "name": "Gerald Akenten",
+        "role": "Curious, Other, Developer",
+        "reason": "Both prefer here with friends networking at events.",
+        "strength": "med",
+        "shared": [
+          "🤝 Here with friends"
+        ]
+      },
+      {
+        "name": "Jaron Andre",
+        "role": "Developer",
+        "reason": "Both prefer here with friends networking at events.",
+        "strength": "med",
+        "shared": [
+          "🤝 Here with friends"
+        ]
+      }
+    ]
+  },
+  "sahil lulla": {
+    "name": "Sahil Lulla",
+    "role": "Founder, Developer, Creator",
+    "interests": [
+      "🎥 Video / Motion",
+      "🧪 Tool builder / open source",
+      "🧠 AI agents / automation"
+    ],
+    "tools": "Loraverse, Gemini, Seedance, Kling",
+    "matches": [
+      {
+        "name": "Yura Savchenko",
+        "role": "Developer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧪 Tool builder / open source. Both use Gemini. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🔧 Gemini"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧪 Tool builder / open source. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Mary Li",
+        "role": "Designer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧪 Tool builder / open source. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation"
+        ]
+      }
+    ]
+  },
+  "seema lakhani": {
+    "name": "Seema Lakhani",
+    "role": "Founder",
+    "interests": [
+      "🎥 Video / Motion",
+      "🎭 Story / writing"
+    ],
+    "tools": "Higgsfield. Kling. Veo. CapCut.",
+    "matches": [
+      {
+        "name": "Meg Button",
+        "role": "Designer, Artist, Founder, Curious",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Sonya",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Keatan",
+        "role": "Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Linda",
+        "role": "Curious",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing"
+        ]
+      }
+    ]
+  },
+  "seunga lee": {
+    "name": "Seunga Lee",
+    "role": "Creator",
+    "interests": [
+      "🧠 AI agents / automation"
+    ],
+    "tools": "Chat gpt, lovable, Claude code, Edit, cap cut, Sora, Gemini",
+    "matches": [
+      {
+        "name": "Jasminee Persaud",
+        "role": "Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use CHAT and GPT. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 CHAT",
+          "🔧 GPT"
+        ]
+      },
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use CHAT and GPT.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 CHAT",
+          "🔧 GPT"
+        ]
+      },
+      {
+        "name": "Mare",
+        "role": "Designer",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use Claude and CODE. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use Claude and CODE. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Tomi",
+        "role": "Developer, Creator, Founder, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation. Both use Claude and CODE. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🔧 Claude",
+          "🔧 CODE"
+        ]
+      }
+    ]
+  },
+  "shane d'costa": {
+    "name": "Shane D'Costa",
+    "role": "Creator, Artist, Other",
+    "interests": [
+      "🌱 Beginner-friendly",
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🪩 Live experiences / events",
+      "💼 Looking for work",
+      "🎛️ TouchDesigner / visuals",
+      "🧑‍🏫 Teaching / mentoring"
+    ],
+    "tools": "CaptureOne, Adobe Creative Suite, Figma",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events",
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events",
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "Jude",
+        "role": "Creator, Artist, Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🪩 Live experiences / events. Both use Adobe and Creative. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals",
+          "🔧 Adobe"
+        ]
+      }
+    ]
+  },
+  "shelley": {
+    "name": "Shelley",
+    "role": "Designer",
+    "interests": [
+      "🎥 Video / Motion",
+      "🧠 AI agents / automation",
+      "🪩 Live experiences / events"
+    ],
+    "tools": "Elevenlabs, Kling, GPT",
+    "matches": [
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both prefer here with friends networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Fayeque Townsend-Rahman",
+        "role": "Other",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both use Kling.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🔧 Kling"
+        ]
+      },
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both use GPT.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🔧 GPT"
+        ]
+      }
+    ]
+  },
+  "silvia stroie": {
+    "name": "Silvia Stroie",
+    "role": "Designer",
+    "interests": [
+      "🎛️ TouchDesigner / visuals",
+      "🧠 AI agents / automation",
+      "🎥 Video / Motion"
+    ],
+    "tools": "Figma and Claude",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🧠 AI agents / automation. Both use Claude. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🧠 AI agents / automation. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Indranil Datta",
+        "role": "Artist, Designer, Curious",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🧠 AI agents / automation.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🎛️ TouchDesigner / visuals and 🧠 AI agents / automation. Both use Figma. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎛️ TouchDesigner / visuals",
+          "🧠 AI agents / automation",
+          "🔧 Figma"
+        ]
+      },
+      {
+        "name": "Mary Li",
+        "role": "Designer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Figma.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Figma"
+        ]
+      }
+    ]
+  },
+  "sonya": {
+    "name": "Sonya",
+    "role": "Founder, Creator",
+    "interests": [
+      "🎥 Video / Motion",
+      "🎭 Story / writing",
+      "🕹️ Games / Interactive"
+    ],
+    "tools": "Loraverse, Fal AI, Kling AI, Google Flow",
+    "matches": [
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing. Both use AI.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing",
+          "🕹️ Games / Interactive",
+          "🔧 AI"
+        ]
+      },
+      {
+        "name": "Kumsal Obuz",
+        "role": "Founder, Creator",
+        "reason": "Shared interests in 🎭 Story / writing and 🕹️ Games / Interactive. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Meg Button",
+        "role": "Designer, Artist, Founder, Curious",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing"
+        ]
+      },
+      {
+        "name": "Pip Swartz",
+        "role": "Founder",
+        "reason": "Shared interests in 🎭 Story / writing and 🕹️ Games / Interactive. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🕹️ Games / Interactive"
+        ]
+      }
+    ]
+  },
+  "sophie jiang": {
+    "name": "Sophie Jiang",
+    "role": "Founder, Designer",
+    "interests": [
+      "🧊 3D / CG",
+      "🕹️ Games / Interactive",
+      "🪩 Live experiences / events",
+      "🎛️ TouchDesigner / visuals"
+    ],
+    "tools": "",
+    "matches": [
+      {
+        "name": "Anthony Machula",
+        "role": "Founder",
+        "reason": "Shared interests in 🧊 3D / CG and 🕹️ Games / Interactive. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Hugo Voss",
+        "role": "Designer",
+        "reason": "Shared interests in 🧊 3D / CG and 🕹️ Games / Interactive. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 🪩 Live experiences / events. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧊 3D / CG and 🪩 Live experiences / events. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🪩 Live experiences / events and 🎛️ TouchDesigner / visuals. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎛️ TouchDesigner / visuals"
+        ]
+      }
+    ]
+  },
+  "targiv roham": {
+    "name": "Targiv Roham",
+    "role": "Founder, Creator, Curious",
+    "interests": [
+      "🎥 Video / Motion",
+      "🎭 Story / writing",
+      "💼 Looking for work",
+      "🪩 Live experiences / events"
+    ],
+    "tools": "Mainly Davinci for video editing. ChatGPT to refine thoughts, scripts and organization.",
+    "matches": [
+      {
+        "name": "Meg Button",
+        "role": "Designer, Artist, Founder, Curious",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing. Both use Davinci. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing",
+          "🔧 Davinci"
+        ]
+      },
+      {
+        "name": "Leo Tolstikov",
+        "role": "Artist, Designer, Other",
+        "reason": "Shared interests in 🎥 Video / Motion and 🪩 Live experiences / events. Both use TO.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🪩 Live experiences / events",
+          "🔧 TO"
+        ]
+      },
+      {
+        "name": "Linda",
+        "role": "Curious",
+        "reason": "Shared interests in 🎥 Video / Motion and 🎭 Story / writing. Both use Chatgpt.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🎭 Story / writing",
+          "🔧 Chatgpt"
+        ]
+      },
+      {
+        "name": "Minas Adonai",
+        "role": "Founder, Artist",
+        "reason": "Shared interests in 🎭 Story / writing and 🪩 Live experiences / events. Both use AND.",
+        "strength": "high",
+        "shared": [
+          "🎭 Story / writing",
+          "🪩 Live experiences / events",
+          "🔧 AND"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 💼 Looking for work and 🪩 Live experiences / events. Both use Chatgpt.",
+        "strength": "high",
+        "shared": [
+          "💼 Looking for work",
+          "🪩 Live experiences / events",
+          "🔧 Chatgpt"
+        ]
+      }
+    ]
+  },
+  "thiago carneiro": {
+    "name": "Thiago Carneiro",
+    "role": "Artist, Designer, Creator",
+    "interests": [
+      "🧊 3D / CG",
+      "🎥 Video / Motion",
+      "🕹️ Games / Interactive"
+    ],
+    "tools": "Unreal Engine, Claude",
+    "matches": [
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🧊 3D / CG and 🎥 Video / Motion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Dafne Hernandez",
+        "role": "Designer, Artist, Creator",
+        "reason": "Shared interests in 🧊 3D / CG and 🎥 Video / Motion.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧊 3D / CG and 🎥 Video / Motion. Both use Claude.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🎥 Video / Motion",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Anthony Machula",
+        "role": "Founder",
+        "reason": "Shared interests in 🧊 3D / CG and 🕹️ Games / Interactive. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Arthur Yeung",
+        "role": "Producer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive"
+        ]
+      }
+    ]
+  },
+  "tomi": {
+    "name": "Tomi",
+    "role": "Developer, Creator, Founder, Curious",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "🧊 3D / CG"
+    ],
+    "tools": "Cursor , claude code, open code",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Claude and CODE. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🧊 3D / CG",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧊 3D / CG. Both use Cursor and Claude. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧊 3D / CG",
+          "🔧 Cursor",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Cursor and Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🔧 Cursor",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Ashwin Kamath",
+        "role": "Developer, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use CODE. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Jaron Andre",
+        "role": "Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧊 3D / CG. Both use Cursor. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧊 3D / CG",
+          "🔧 Cursor"
+        ]
+      }
+    ]
+  },
+  "tyler sun": {
+    "name": "Tyler Sun",
+    "role": "Curious",
+    "interests": [
+      "🧪 Tool builder / open source",
+      "🌱 Beginner-friendly",
+      "🎧 Music / sound"
+    ],
+    "tools": "InDesign, Reaper, Python",
+    "matches": [
+      {
+        "name": "Jaron Andre",
+        "role": "Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🎧 Music / sound. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🎧 Music / sound"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🌱 Beginner-friendly. Both prefer 1:1 convos networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🌱 Beginner-friendly"
+        ]
+      },
+      {
+        "name": "Jasminee Persaud",
+        "role": "Curious",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🌱 Beginner-friendly.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🌱 Beginner-friendly"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🎧 Music / sound.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🎧 Music / sound"
+        ]
+      },
+      {
+        "name": "Adrienne",
+        "role": "Creator",
+        "reason": "Shared interests in 🌱 Beginner-friendly. Both prefer 1:1 convos networking at events.",
+        "strength": "med",
+        "shared": [
+          "🌱 Beginner-friendly"
+        ]
+      }
+    ]
+  },
+  "varshitha venkatesh": {
+    "name": "Varshitha Venkatesh",
+    "role": "Developer",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source",
+      "💼 Looking for work",
+      "🪩 Live experiences / events"
+    ],
+    "tools": "Claude Code, Cursor, ChatGPT, Notion",
+    "matches": [
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Claude. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "💼 Looking for work",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "💼 Looking for work",
+          "🪩 Live experiences / events"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Claude and CODE.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events",
+          "🔧 Claude"
+        ]
+      },
+      {
+        "name": "Louna Alouzi",
+        "role": "Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Notion. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "💼 Looking for work",
+          "🔧 Notion"
+        ]
+      },
+      {
+        "name": "Michael Spina",
+        "role": "Creator, Curious",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🧪 Tool builder / open source. Both use Cursor. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🪩 Live experiences / events",
+          "🔧 Cursor"
+        ]
+      }
+    ]
+  },
+  "william mcmaster": {
+    "name": "William McMaster",
+    "role": "Founder",
+    "interests": [
+      "🧊 3D / CG",
+      "🧪 Tool builder / open source",
+      "🎥 Video / Motion"
+    ],
+    "tools": "Comfy Metashape anything ai and 3d scanning related.",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧊 3D / CG and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🧊 3D / CG and 🎥 Video / Motion. Both use AI.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🎥 Video / Motion",
+          "🔧 AI"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🎥 Video / Motion. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🎥 Video / Motion. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🎥 Video / Motion"
+        ]
+      },
+      {
+        "name": "Nick Fox-Gieg",
+        "role": "Artist, Developer",
+        "reason": "Shared interests in 🧊 3D / CG and 🧪 Tool builder / open source. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧊 3D / CG",
+          "🧪 Tool builder / open source"
+        ]
+      }
+    ]
+  },
+  "winston chow": {
+    "name": "Winston Chow",
+    "role": "Developer, Designer, Artist, Curious",
+    "interests": [
+      "🧪 Tool builder / open source",
+      "🧠 AI agents / automation",
+      "🕹️ Games / Interactive",
+      "💼 Looking for work"
+    ],
+    "tools": "Obsidian (note-taking) Figma (design) VS Code / GitHub Copilot (dev)",
+    "matches": [
+      {
+        "name": "Shane D'Costa",
+        "role": "Creator, Artist, Other",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use Figma. Both prefer intros please networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 Figma"
+        ]
+      },
+      {
+        "name": "Varshitha Venkatesh",
+        "role": "Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both use CODE.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "💼 Looking for work",
+          "🔧 CODE"
+        ]
+      },
+      {
+        "name": "Noah van Hart",
+        "role": "Founder, Designer, Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "💼 Looking for work"
+        ]
+      },
+      {
+        "name": "Yura Savchenko",
+        "role": "Developer",
+        "reason": "Shared interests in 🧪 Tool builder / open source and 🧠 AI agents / automation. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🧪 Tool builder / open source",
+          "🧠 AI agents / automation",
+          "🕹️ Games / Interactive"
+        ]
+      },
+      {
+        "name": "Gerald Akenten",
+        "role": "Curious, Other, Developer",
+        "reason": "Shared interests in 🕹️ Games / Interactive and 💼 Looking for work. Both use CODE and Github.",
+        "strength": "high",
+        "shared": [
+          "🕹️ Games / Interactive",
+          "💼 Looking for work",
+          "🔧 CODE",
+          "🔧 Github"
+        ]
+      }
+    ]
+  },
+  "yura savchenko": {
+    "name": "Yura Savchenko",
+    "role": "Developer",
+    "interests": [
+      "🎥 Video / Motion",
+      "🕹️ Games / Interactive",
+      "🧠 AI agents / automation",
+      "🧪 Tool builder / open source"
+    ],
+    "tools": "Cursor, Gemini",
+    "matches": [
+      {
+        "name": "Sahil Lulla",
+        "role": "Founder, Developer, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both use Gemini. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source",
+          "🔧 Gemini"
+        ]
+      },
+      {
+        "name": "Affan",
+        "role": "Designer, Developer, Producer, Founder, Curious, Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Disha Sareen",
+        "role": "Creator",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🧠 AI agents / automation. Both prefer small groups networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Rudy Pietrolungo",
+        "role": "Designer",
+        "reason": "Shared interests in 🎥 Video / Motion and 🕹️ Games / Interactive. Both prefer i'll mingle solo networking at events.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🕹️ Games / Interactive",
+          "🧠 AI agents / automation"
+        ]
+      }
+    ]
+  },
+  "josh maldonado": {
+    "name": "Josh Maldonado",
+    "role": "Host, Founder",
+    "interests": [
+      "🧠 AI agents / automation",
+      "🎥 Video / Motion"
+    ],
+    "tools": "ChatGPT, Codex, Cursor, Claude Code, Nano Banana, Kling, Capcut",
+    "hottestTake": "Taste and curation are supreme in the age of generative abundance",
+    "workingOn": "Mealscanner, an AI calorie tracker, and running CTRL+SHIFT meetup for creatives",
+    "matches": [
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Claude Code, so this should be a strong practical conversation.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Claude Code"
+        ]
+      },
+      {
+        "name": "Fayeque Townsend-Rahman",
+        "role": "Other",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Kling, so this should be a strong practical conversation.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Kling"
+        ]
+      },
+      {
+        "name": "JP",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Cursor, so this should be a strong practical conversation.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Cursor"
+        ]
+      },
+      {
+        "name": "Keatan",
+        "role": "Creator",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use Capcut, so this should be a strong practical conversation.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 Capcut"
+        ]
+      },
+      {
+        "name": "Robert Mill",
+        "role": "Founder",
+        "reason": "Shared interests in 🧠 AI agents / automation and 🎥 Video / Motion. Both use CLAUDE, so this should be a strong practical conversation.",
+        "strength": "high",
+        "shared": [
+          "🧠 AI agents / automation",
+          "🎥 Video / Motion",
+          "🔧 CLAUDE"
+        ]
+      }
+    ]
+  },
+  "miriam arbus": {
+    "name": "Miriam Arbus",
+    "role": "Producer",
+    "interests": [],
+    "tools": "Comet browser, Perplexity",
+    "hottestTake": "It's a tool and it still always comes down to how we use it",
+    "meetingStyle": "Here with friends, Intros Please, I'll mingle Solo",
+    "openToIntroductions": "Yes",
+    "workingOn": "",
+    "matches": [
+      {
+        "name": "Arthur Yeung",
+        "role": "Producer",
+        "reason": "Both are producers navigating fast AI workflows. Great peer exchange on balancing speed with taste and curation.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🤝 Producer perspective"
+        ]
+      },
+      {
+        "name": "Adriana Martinez",
+        "role": "Producer",
+        "reason": "Shared producer background and human-first approach to tooling. Strong potential for practical collaboration conversations.",
+        "strength": "high",
+        "shared": [
+          "🎥 Video / Motion",
+          "🧭 Curation mindset"
+        ]
+      },
+      {
+        "name": "Sahil Lulla",
+        "role": "Founder, Developer, Creator",
+        "reason": "Sahil works in AI-assisted post-production, which pairs well with Miriam's producer lens on intentional tool use.",
+        "strength": "med",
+        "shared": [
+          "🎥 Video / Motion",
+          "AI workflow"
+        ]
+      },
+      {
+        "name": "Josh Maldonado",
+        "role": "Host, Founder",
+        "reason": "Josh runs CTRL+SHIFT and can connect collaborators quickly, matching Miriam's intros-friendly networking style.",
+        "strength": "med",
+        "shared": [
+          "🤝 Intros",
+          "Creative community"
+        ]
+      },
+      {
+        "name": "Carlos Ibarra",
+        "role": "Artist, Founder, Producer",
+        "reason": "Carlos is also a producer with live/video interests. Useful peer conversation on creative production directions.",
+        "strength": "med",
+        "shared": [
+          "🪩 Live experiences / events",
+          "🎥 Video / Motion"
+        ]
+      }
+    ]
+  },
+  "dan moseley": {
+    "name": "Dan Moseley",
+    "role": "Founder",
+    "interests": [
+      "🧪 Tool builder / open source",
+      "🧠 AI agents / automation"
+    ],
+    "tools": "Claude Code, Nano Banana",
+    "hottestTake": "IMPLEMENTATION IS REALLY HARD WORK. biggest barrier to success is not just doing it a few times and being impressed - it's huge effort to make it part of the daily",
+    "meetingStyle": "Small groups",
+    "openToIntroductions": "Yes (manual override)",
+    "workingOn": "superproper.ai - now a 30 person AI forward ad agency and GROWING!",
+    "matches": [
+      {
+        "name": "Josh Maldonado",
+        "role": "Host, Founder",
+        "reason": "Both are founder-builders using Claude Code and Nano Banana with a strong bias toward practical execution. High-value conversation on operationalizing AI workflows at scale.",
+        "strength": "high",
+        "shared": [
+          "🔧 Claude Code",
+          "🔧 Nano Banana",
+          "🧠 AI agents / automation"
+        ]
+      },
+      {
+        "name": "Miro K",
+        "role": "Founder, Developer",
+        "reason": "Shared Claude Code workflow and founder mindset make this an excellent tactical pairing for shipping agentic products faster.",
+        "strength": "high",
+        "shared": [
+          "🔧 Claude Code",
+          "🧠 AI agents / automation",
+          "🧪 Tool builder / open source"
+        ]
+      },
+      {
+        "name": "Paul Gadi",
+        "role": "Founder, Developer, Designer, Creator",
+        "reason": "Paul is a multi-disciplinary founder using Claude Code. Strong fit for deep implementation discussions and creative-technical execution strategy.",
+        "strength": "high",
+        "shared": [
+          "🔧 Claude Code",
+          "🧪 Tool builder / open source",
+          "Founder energy"
+        ]
+      },
+      {
+        "name": "Marcelo",
+        "role": "Founder, Creator, Developer",
+        "reason": "Marcelo also uses Claude Code and focuses on practical building. Great match for candid conversation about what actually works beyond demos.",
+        "strength": "high",
+        "shared": [
+          "🔧 Claude Code",
+          "🧠 AI agents / automation",
+          "Founder energy"
+        ]
+      },
+      {
+        "name": "Miguel Twahirwa",
+        "role": "Founder, Developer, Curious",
+        "reason": "Both are founder/developer profiles actively using Claude Code. Strong collaboration potential around implementation discipline and tooling patterns.",
+        "strength": "high",
+        "shared": [
+          "🔧 Claude Code",
+          "🧪 Tool builder / open source",
+          "Founder energy"
+        ]
+      }
+    ]
+  }
+};
+
+// Also add some aliases for flexible lookup
+function normalizeKey(name) {
+  return name.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+// Build lookup
+const guestLookup = {};
+const guestNames = [];
+Object.keys(GUESTS).forEach(key => {
+  const g = GUESTS[key];
+  guestLookup[normalizeKey(g.name)] = g;
+  guestNames.push(g.name);
+});
+
+// ============================================================
+// APP
+// ============================================================
+const app = document.getElementById('app');
+
+// Check URL params
+const params = new URLSearchParams(window.location.search);
+const nameParam = params.get('name') || params.get('n');
+
+function getInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+}
+
+const gradients = [
+  'linear-gradient(135deg, #c8ff00, #3dff8e)',
+  'linear-gradient(135deg, #ff3d8e, #ff8e3d)',
+  'linear-gradient(135deg, #3d8eff, #8e3dff)',
+  'linear-gradient(135deg, #ff3d8e, #8e3dff)',
+  'linear-gradient(135deg, #3dff8e, #3d8eff)',
+  'linear-gradient(135deg, #c8ff00, #3d8eff)',
+  'linear-gradient(135deg, #ff8e3d, #ff3d8e)',
+  'linear-gradient(135deg, #8e3dff, #3d8eff)',
+];
+
+function hashGradient(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+  return gradients[Math.abs(h) % gradients.length];
+}
+
+function renderSearch() {
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">CTRL SHIFT Vol. 9</div>
+      <h1>Find Some <span class="highlight">Friends</span></h1>
+      <p class="subtitle">Creative Tech Meetup — Feb 2026</p>
+    </div>
+    <div class="search-section">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Type your name to find matches..." autocomplete="off" autofocus />
+      </div>
+      <div id="searchResults"></div>
+    </div>
+    <div class="footer">
+      Built with ☕ for the CTRL SHIFT community
+    </div>
+  `;
+  
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  
+  input.addEventListener('input', () => {
+    const q = input.value.toLowerCase().trim();
+    if (q.length < 1) {
+      results.innerHTML = '';
+      results.style.display = 'none';
+      return;
+    }
+    
+    const matches = guestNames.filter(n => n.toLowerCase().includes(q));
+    
+    if (matches.length === 0) {
+      results.style.display = 'block';
+      results.innerHTML = '<div style="padding: 16px 20px; color: var(--text-dim); font-size: 0.8rem;">No guests found with that name</div>';
+      return;
+    }
+    
+    results.style.display = 'block';
+    results.innerHTML = matches.map(name => {
+      const g = guestLookup[normalizeKey(name)];
+      return `
+        <div class="search-result-item" onclick="selectGuest('${normalizeKey(name)}')">
+          <div class="avatar" style="background: ${hashGradient(name)}">${getInitials(name)}</div>
+          <div class="info">
+            <div class="name">${name}</div>
+            <div class="role">${g.role || 'Guest'}</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-dim)"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      `;
+    }).join('');
+  });
+}
+
+function selectGuest(key) {
+  const g = guestLookup[key];
+  if (!g) return;
+  
+  // Update URL without reload
+  const url = new URL(window.location);
+  url.searchParams.set('name', g.name);
+  window.history.pushState({}, '', url);
+  
+  renderProfile(g);
+}
+
+window.selectGuest = selectGuest;
+
+function renderProfile(guest) {
+  const limitedMatches = (guest.matches || []).slice(0, 5);
+  const topStrongMatches = limitedMatches.filter(m => m.strength === 'high').slice(0, 2);
+  const remainingMatches = limitedMatches.filter(m => !topStrongMatches.includes(m));
+
+  const groupedCards = `
+    ${topStrongMatches.length ? `<div class="group-label">⚡ Top strong matches</div>` : ''}
+    ${topStrongMatches.map((m, i) => renderMatchCard(m, i, 'top-strong')).join('')}
+    ${remainingMatches.length ? `<div class="group-label">${topStrongMatches.length ? '✦ More matches' : '✦ Matches'}</div>` : ''}
+    ${remainingMatches.map((m, i) => renderMatchCard(m, i + topStrongMatches.length)).join('')}
+  `;
+  
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">CTRL SHIFT Vol. 9</div>
+    </div>
+    <div class="profile-section">
+      <button class="back-btn" onclick="goBack()">← Back to search</button>
+      <div class="profile-card">
+        <div class="profile-avatar" style="background: ${hashGradient(guest.name)}">${getInitials(guest.name)}</div>
+        <div class="profile-name">${guest.name}</div>
+        <div class="profile-role">${guest.role || 'Guest'}</div>
+        ${guest.interests.length ? `
+          <div class="profile-tags">
+            ${guest.interests.map(i => `<span class="tag accent">${i}</span>`).join('')}
+          </div>
+        ` : ''}
+        ${guest.tools ? `
+          <div class="profile-tags" style="margin-top: 8px">
+            <span class="tag">🔧 ${guest.tools}</span>
+          </div>
+        ` : ''}
+      </div>
+      
+      <div class="matches-header">
+        Your Matches
+        <span class="count">${limitedMatches.length}</span>
+      </div>
+      
+      ${limitedMatches.length > 0 ? groupedCards : `
+        <div class="no-matches">
+          <div class="emoji">🌿</div>
+          <p>No pre-matched connections yet, but that doesn't mean there aren't great people to meet! Explore the event and make your own connections.</p>
+        </div>
+      `}
+    </div>
+    <div class="footer">
+      Built with ☕ for the CTRL SHIFT community
+    </div>
+  `;
+}
+
+function renderMatchCard(m, i, extraClass = '') {
+  const className = extraClass ? `match-card ${extraClass}` : 'match-card';
+  return `
+    <div class="${className}" style="animation-delay: ${i * 0.08}s" onclick="navigateToMatch('${normalizeKey(m.name)}')">
+      <div class="match-card-top">
+        <div class="match-avatar" style="background: ${hashGradient(m.name)}">${getInitials(m.name)}</div>
+        <div class="match-info">
+          <div class="match-name">${m.name}</div>
+          <div class="match-role">${m.role}</div>
+        </div>
+        <div class="match-score ${m.strength}">${m.strength === 'high' ? '⚡ Strong' : '✦ Good'}</div>
+      </div>
+      <div class="match-reason">${m.reason}</div>
+      <div class="match-shared">
+        ${m.shared.map(s => `<span class="shared-tag">${s}</span>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+window.navigateToMatch = function(key) {
+  const g = guestLookup[key];
+  if (g) {
+    const url = new URL(window.location);
+    url.searchParams.set('name', g.name);
+    window.history.pushState({}, '', url);
+    renderProfile(g);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+window.goBack = function() {
+  const url = new URL(window.location);
+  url.searchParams.delete('name');
+  url.searchParams.delete('n');
+  window.history.pushState({}, '', url);
+  renderSearch();
+};
+
+// Handle browser back/forward
+window.addEventListener('popstate', () => {
+  const p = new URLSearchParams(window.location.search);
+  const n = p.get('name') || p.get('n');
+  if (n) {
+    const g = guestLookup[normalizeKey(n)];
+    if (g) renderProfile(g);
+    else renderSearch();
+  } else {
+    renderSearch();
+  }
+});
+
+// Init
+if (nameParam) {
+  const g = guestLookup[normalizeKey(nameParam)];
+  if (g) renderProfile(g);
+  else renderSearch();
+} else {
+  renderSearch();
+}
+</script>
+</body>
+</html>
