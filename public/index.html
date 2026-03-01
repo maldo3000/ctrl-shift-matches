@@ -410,6 +410,97 @@ body {
   padding-left: 4px;
 }
 
+/* Archive / coming soon */
+.archive-shell {
+  animation: fadeUp 0.4s ease both;
+}
+
+.archive-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.status-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.status-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.status-card h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+.status-card p {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.status-card.vol10 {
+  border-color: #3d8eff66;
+  background:
+    linear-gradient(180deg, rgba(61, 142, 255, 0.09) 0%, rgba(61, 142, 255, 0.02) 100%),
+    var(--surface);
+}
+
+.unlock-form {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.unlock-form input {
+  width: 100%;
+  padding: 13px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.unlock-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.unlock-btn {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.unlock-error {
+  font-size: 0.72rem;
+  color: #ff6f91;
+  min-height: 1.1em;
+}
+
 /* Footer */
 .footer {
   text-align: center;
@@ -5354,10 +5445,89 @@ function hashGradient(name) {
   return gradients[Math.abs(h) % gradients.length];
 }
 
+const ARCHIVE_PASSWORD = 'ctrlshift9';
+const ARCHIVE_UNLOCK_KEY = 'ctrlshift-vol9-unlocked';
+
+function isArchiveUnlocked() {
+  try {
+    return sessionStorage.getItem(ARCHIVE_UNLOCK_KEY) === '1';
+  } catch (err) {
+    return false;
+  }
+}
+
+function setArchiveUnlocked() {
+  try {
+    sessionStorage.setItem(ARCHIVE_UNLOCK_KEY, '1');
+  } catch (err) {
+    // no-op
+  }
+}
+
+function routeVol9() {
+  const p = new URLSearchParams(window.location.search);
+  const n = p.get('name') || p.get('n');
+  if (n) {
+    const g = guestLookup[normalizeKey(n)];
+    if (g) renderProfile(g);
+    else renderSearch();
+    return;
+  }
+  renderSearch();
+}
+
+function renderArchiveGate() {
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">CTRL SHIFT</div>
+      <h1>Volume 10 <span class="highlight">Coming Soon</span></h1>
+      <p class="subtitle">Next edition in progress</p>
+    </div>
+    <div class="archive-shell">
+      <div class="archive-grid">
+        <div class="status-card vol10">
+          <div class="status-label">● Active Slot</div>
+          <h3>CTRL SHIFT Vol. 10</h3>
+          <p>New matchmaking and guest updates will appear here when Vol. 10 goes live.</p>
+        </div>
+        <div class="status-card">
+          <div class="status-label">🔒 Archived</div>
+          <h3>CTRL SHIFT Vol. 9</h3>
+          <p>Vol. 9 is now archived. Enter the password to view the full matchmaking archive.</p>
+          <form class="unlock-form" id="unlockForm">
+            <input type="password" id="archivePassword" placeholder="Enter archive password" autocomplete="off" />
+            <button type="submit" class="unlock-btn">Open Vol. 9 Archive</button>
+            <div class="unlock-error" id="unlockError"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      Built with ☕ for the CTRL SHIFT community
+    </div>
+  `;
+
+  const form = document.getElementById('unlockForm');
+  const input = document.getElementById('archivePassword');
+  const error = document.getElementById('unlockError');
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (input.value.trim() === ARCHIVE_PASSWORD) {
+      setArchiveUnlocked();
+      routeVol9();
+      return;
+    }
+    error.textContent = 'Incorrect password. Try again.';
+    input.focus();
+    input.select();
+  });
+}
+
 function renderSearch() {
   app.innerHTML = `
     <div class="header">
-      <div class="header-label">CTRL SHIFT Vol. 9</div>
+      <div class="header-label">CTRL SHIFT Vol. 9 Archive</div>
       <h1>Find Some <span class="highlight">Friends</span></h1>
       <p class="subtitle">Creative Tech Meetup — Feb 2026</p>
     </div>
@@ -5436,7 +5606,7 @@ function renderProfile(guest) {
   
   app.innerHTML = `
     <div class="header">
-      <div class="header-label">CTRL SHIFT Vol. 9</div>
+      <div class="header-label">CTRL SHIFT Vol. 9 Archive</div>
     </div>
     <div class="profile-section">
       <button class="back-btn" onclick="goBack()">← Back to search</button>
@@ -5515,24 +5685,18 @@ window.goBack = function() {
 
 // Handle browser back/forward
 window.addEventListener('popstate', () => {
-  const p = new URLSearchParams(window.location.search);
-  const n = p.get('name') || p.get('n');
-  if (n) {
-    const g = guestLookup[normalizeKey(n)];
-    if (g) renderProfile(g);
-    else renderSearch();
-  } else {
-    renderSearch();
+  if (!isArchiveUnlocked()) {
+    renderArchiveGate();
+    return;
   }
+  routeVol9();
 });
 
 // Init
-if (nameParam) {
-  const g = guestLookup[normalizeKey(nameParam)];
-  if (g) renderProfile(g);
-  else renderSearch();
+if (isArchiveUnlocked()) {
+  routeVol9();
 } else {
-  renderSearch();
+  renderArchiveGate();
 }
 </script>
 </body>
