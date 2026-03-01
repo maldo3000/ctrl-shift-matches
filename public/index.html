@@ -5564,8 +5564,9 @@ function renderSearch() {
     results.style.display = 'block';
     results.innerHTML = matches.map(name => {
       const g = guestLookup[normalizeKey(name)];
+      const encodedKey = encodeURIComponent(normalizeKey(name));
       return `
-        <div class="search-result-item" onclick="selectGuest('${normalizeKey(name)}')">
+        <div class="search-result-item" data-key="${encodedKey}" onclick="selectGuest(decodeURIComponent(this.dataset.key))">
           <div class="avatar" style="background: ${hashGradient(name)}">${getInitials(name)}</div>
           <div class="info">
             <div class="name">${name}</div>
@@ -5646,8 +5647,9 @@ function renderProfile(guest) {
 
 function renderMatchCard(m, i, extraClass = '') {
   const className = extraClass ? `match-card ${extraClass}` : 'match-card';
+  const encodedKey = encodeURIComponent(normalizeKey(m.name));
   return `
-    <div class="${className}" style="animation-delay: ${i * 0.08}s" onclick="navigateToMatch('${normalizeKey(m.name)}')">
+    <div class="${className}" data-key="${encodedKey}" style="animation-delay: ${i * 0.08}s" onclick="navigateToMatch(decodeURIComponent(this.dataset.key))">
       <div class="match-card-top">
         <div class="match-avatar" style="background: ${hashGradient(m.name)}">${getInitials(m.name)}</div>
         <div class="match-info">
