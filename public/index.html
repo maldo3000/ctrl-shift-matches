@@ -5403,7 +5403,13 @@ const GUESTS = {
 
 // Also add some aliases for flexible lookup
 function normalizeKey(name) {
-  return name.toLowerCase().trim().replace(/\s+/g, ' ');
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[’‘`´]/g, "'")
+    .replace(/['"]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // Build lookup
@@ -5412,6 +5418,7 @@ const guestNames = [];
 Object.keys(GUESTS).forEach(key => {
   const g = GUESTS[key];
   guestLookup[normalizeKey(g.name)] = g;
+  guestLookup[normalizeKey(key)] = g;
   guestNames.push(g.name);
 });
 
@@ -5446,29 +5453,25 @@ function hashGradient(name) {
 }
 
 const ARCHIVE_PASSWORD = 'ctrlshift9';
-const ARCHIVE_UNLOCK_KEY = 'ctrlshift-vol9-unlocked';
+let archiveUnlocked = false;
 
 function isArchiveUnlocked() {
-  try {
-    return sessionStorage.getItem(ARCHIVE_UNLOCK_KEY) === '1';
-  } catch (err) {
-    return false;
-  }
+  return archiveUnlocked;
 }
 
 function setArchiveUnlocked() {
-  try {
-    sessionStorage.setItem(ARCHIVE_UNLOCK_KEY, '1');
-  } catch (err) {
-    // no-op
-  }
+  archiveUnlocked = true;
+}
+
+function getGuestByKey(key) {
+  return guestLookup[normalizeKey(key)] || null;
 }
 
 function routeVol9() {
   const p = new URLSearchParams(window.location.search);
   const n = p.get('name') || p.get('n');
   if (n) {
-    const g = guestLookup[normalizeKey(n)];
+    const g = getGuestByKey(n);
     if (g) renderProfile(g);
     else renderSearch();
     return;
@@ -5580,7 +5583,7 @@ function renderSearch() {
 }
 
 function selectGuest(key) {
-  const g = guestLookup[key];
+  const g = getGuestByKey(key);
   if (!g) return;
   
   // Update URL without reload
@@ -5667,7 +5670,7 @@ function renderMatchCard(m, i, extraClass = '') {
 }
 
 window.navigateToMatch = function(key) {
-  const g = guestLookup[key];
+  const g = getGuestByKey(key);
   if (g) {
     const url = new URL(window.location);
     url.searchParams.set('name', g.name);
