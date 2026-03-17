@@ -36,6 +36,7 @@ Use `source` query param to control mode:
 Event selection query params:
 
 - `?event=vol11` (event key; resolved via `LUMA_EVENT_MAP`)
+- `?event=vol9` (built-in static archive event in this repo)
 - `?event_api_id=evt-...` (direct event override)
 - `?event_id=...` (fallback if you use internal event id)
 
@@ -45,9 +46,12 @@ Examples:
 https://yourdomain.com?source=auto
 https://yourdomain.com?source=live
 https://yourdomain.com?source=fallback
+https://yourdomain.com?event=vol9
 https://yourdomain.com?source=live&event=vol11
 https://yourdomain.com?source=live&event_api_id=evt-AIHKhl74s8lpCUH
 ```
+
+Event labels are automatic for live events: the API reads the Luma event title and extracts `Vol. #` when present (e.g. `CTRL SHIFT Vol. 12`).
 
 ## Luma API configuration (Vercel env vars)
 

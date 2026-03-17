@@ -5423,6 +5423,16 @@ const LIVE_API_ENDPOINT = '/api/matches';
 const EVENT_PARAM = String(params.get('event') || params.get('event_key') || '').trim();
 const EVENT_API_ID_PARAM = String(params.get('event_api_id') || params.get('eventApiId') || '').trim();
 const EVENT_ID_PARAM = String(params.get('event_id') || '').trim();
+const SELECTED_EVENT_KEY = normalizeKey(EVENT_PARAM);
+
+const EVENT_REGISTRY = {
+  vol9: {
+    label: 'Vol. 9 Archive',
+    mode: 'fallback',
+    guests: GUESTS,
+  },
+};
+const selectedEventConfig = EVENT_REGISTRY[SELECTED_EVENT_KEY] || null;
 
 const guestLookup = {};
 let guestNames = [];
@@ -5439,7 +5449,7 @@ function formatEventLabel(raw) {
   const volumeMatch = text.match(/^vol(?:ume)?[-_ ]?(\d+)$/i);
   if (volumeMatch) return `Vol. ${volumeMatch[1]}`;
 
-  if (/^evt-/i.test(text)) return text;
+  if (/^evt-/i.test(text)) return 'Current Event';
 
   return text
     .split(/[_-]+/g)
@@ -5470,6 +5480,9 @@ function setActiveGuests(sourceGuests) {
 }
 
 function getHeaderLabel() {
+  if (activeDataSource !== 'live' && selectedEventConfig && selectedEventConfig.mode === 'fallback') {
+    return `CTRL SHIFT ${activeEventLabel}`;
+  }
   const suffix = activeDataSource === 'live' ? '' : ' Backup';
   return `CTRL SHIFT ${activeEventLabel}${suffix}`;
 }
@@ -5479,10 +5492,17 @@ function getHeaderSubtitle() {
 }
 
 async function initializeDataSource() {
-  setActiveGuests(GUESTS);
-  activeEventKey = normalizeKey(EVENT_PARAM);
-  activeEventLabel = formatEventLabel(EVENT_PARAM || EVENT_API_ID_PARAM || EVENT_ID_PARAM);
+  const fallbackGuests = (selectedEventConfig && selectedEventConfig.guests) || GUESTS;
+  setActiveGuests(fallbackGuests);
+  activeEventKey = SELECTED_EVENT_KEY;
+  activeEventLabel = (selectedEventConfig && selectedEventConfig.label) || formatEventLabel(EVENT_PARAM || EVENT_API_ID_PARAM || EVENT_ID_PARAM);
   liveStatusMessage = `${activeEventLabel} · Attempting live sync`;
+
+  if (selectedEventConfig && selectedEventConfig.mode === 'fallback') {
+    activeDataSource = 'fallback';
+    liveStatusMessage = `${activeEventLabel} · Archive dataset active`;
+    return;
+  }
 
   if (SOURCE_MODE === 'fallback') {
     liveStatusMessage = `${activeEventLabel} · Backup dataset active (forced fallback mode)`;

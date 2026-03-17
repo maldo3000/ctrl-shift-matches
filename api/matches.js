@@ -93,12 +93,19 @@ function parseJsonObject(value) {
   }
 }
 
+function extractVolumeNumber(value) {
+  const text = String(value || '');
+  const match = text.match(/\bvol(?:ume)?\s*[\.\- ]?\s*(\d+)\b/i);
+  return match ? String(match[1]) : '';
+}
+
 function formatEventLabel(raw) {
   const text = String(raw || '').trim();
   if (!text) return 'Event';
 
-  const volMatch = text.match(/^vol(?:ume)?[-_ ]?(\d+)$/i);
-  if (volMatch) return `Vol. ${volMatch[1]}`;
+  const volNumber = extractVolumeNumber(text);
+  if (volNumber) return `Vol. ${volNumber}`;
+  if (/^evt-/i.test(text)) return 'Current Event';
 
   return text
     .split(/[_-]+/g)
@@ -108,21 +115,33 @@ function formatEventLabel(raw) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function buildEventKey({ explicitEvent, eventLabel, fallbackId }) {
+  const explicit = normalizeKey(explicitEvent || '');
+  if (explicit) return explicit;
+
+  const volNumber = extractVolumeNumber(eventLabel);
+  if (volNumber) return `vol${volNumber}`;
+
+  return normalizeKey(fallbackId || 'live');
+}
+
 function resolveEventSelection(reqQuery) {
   const query = reqQuery || {};
   const eventMap = parseJsonObject(process.env.LUMA_EVENT_MAP);
   const defaultEventKey = String(process.env.LUMA_DEFAULT_EVENT_KEY || '').trim();
 
-  const eventKey = normalizeKey(query.event || query.event_key || defaultEventKey || '');
+  const explicitEvent = String(query.event || query.event_key || '').trim();
+  const eventKey = normalizeKey(explicitEvent || defaultEventKey || '');
   const mappedEventApiId = eventKey && typeof eventMap[eventKey] === 'string' ? String(eventMap[eventKey]).trim() : '';
   const eventApiId =
     String(query.event_api_id || query.eventApiId || '').trim() ||
     mappedEventApiId ||
     String(process.env.LUMA_EVENT_API_ID || process.env.LUMA_EVENT_ID || '').trim();
   const eventId = String(query.event_id || '').trim() || String(process.env.LUMA_EVENT_ID || '').trim();
-  const eventLabel = formatEventLabel(query.event_label || query.event || eventKey || eventApiId);
+  const eventLabel = formatEventLabel(query.event_label || explicitEvent || eventKey || eventApiId);
 
   return {
+    explicitEvent,
     eventKey: eventKey || null,
     eventLabel,
     eventApiId,
@@ -503,7 +522,46 @@ async function fetchAllGuests({ apiKey, eventApiId, eventId, approvalStatus, pag
   return entries.map((entry) => entry.guest).filter(isGuestEligible);
 }
 
-async function loadLiveMatches({ apiKey, eventApiId, eventId, eventKey, eventLabel, approvalStatus }) {
+async function fetchEventDetails({ apiKey, eventApiId, eventId }) {
+  const fetchOne = async (idValue) => {
+    if (!idValue) return null;
+
+    const params = new URLSearchParams();
+    params.set('id', idValue);
+
+    const endpoint = `${LUMA_API_BASE_URL}/v1/event/get?${params.toString()}`;
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'x-luma-api-key': apiKey,
+      },
+    });
+
+    if (!response.ok) return null;
+
+    const payload = await response.json();
+    return payload && payload.event ? payload.event : null;
+  };
+
+  const candidates = [eventApiId, eventId].filter(Boolean);
+  for (const candidate of candidates) {
+    const event = await fetchOne(candidate);
+    if (event) return event;
+  }
+
+  return null;
+}
+
+async function loadLiveMatches({ apiKey, eventApiId, eventId, explicitEventKey, explicitEventLabel, approvalStatus }) {
+  const eventDetails = await fetchEventDetails({ apiKey, eventApiId, eventId });
+  const resolvedEventLabel = formatEventLabel(explicitEventLabel || eventDetails?.name || eventDetails?.title || eventApiId || eventId);
+  const resolvedEventKey = buildEventKey({
+    explicitEvent: explicitEventKey,
+    eventLabel: eventDetails?.name || eventDetails?.title || resolvedEventLabel,
+    fallbackId: eventApiId || eventId,
+  });
+
   const rawGuests = await fetchAllGuests({
     apiKey,
     eventApiId,
@@ -528,8 +586,9 @@ async function loadLiveMatches({ apiKey, eventApiId, eventId, eventKey, eventLab
   return {
     source: 'live',
     generated_at: new Date().toISOString(),
-    event_key: eventKey || null,
-    event_label: eventLabel || null,
+    event_key: resolvedEventKey || null,
+    event_label: resolvedEventLabel || null,
+    event_title: eventDetails?.name || eventDetails?.title || null,
     event_api_id: eventApiId || null,
     event_id: eventId || null,
     guest_count: Object.keys(guests).length,
@@ -593,8 +652,8 @@ module.exports = async function handler(req, res) {
       apiKey,
       eventApiId,
       eventId,
-      eventKey: eventSelection.eventKey,
-      eventLabel: eventSelection.eventLabel,
+      explicitEventKey: eventSelection.explicitEvent || eventSelection.eventKey,
+      explicitEventLabel: query.event_label || eventSelection.eventLabel,
       approvalStatus,
     });
 
