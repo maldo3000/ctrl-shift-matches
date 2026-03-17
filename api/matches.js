@@ -559,6 +559,7 @@ function buildMatches(guestProfiles) {
         reason: buildReason(pair.sharedInterests, pair.sharedTools, pair.sameNetworking),
         strength: scoreToStrength(pair.score),
         shared,
+        socials: b.socials || {},
         _score: pair.score,
       };
 
@@ -568,6 +569,7 @@ function buildMatches(guestProfiles) {
         reason: buildReason(pair.sharedInterests, pair.sharedTools, pair.sameNetworking),
         strength: scoreToStrength(pair.score),
         shared,
+        socials: a.socials || {},
         _score: pair.score,
       };
 

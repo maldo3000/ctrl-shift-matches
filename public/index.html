@@ -297,6 +297,16 @@ body {
   transform: translateY(-1px);
 }
 
+.match-social-links {
+  margin-top: 10px;
+}
+
+.match-social-links .social-link {
+  width: 26px;
+  height: 26px;
+  font-size: 0.52rem;
+}
+
 .tag {
   font-size: 0.65rem;
   padding: 5px 10px;
@@ -5513,6 +5523,7 @@ function formatEventLabel(raw) {
 function setActiveGuests(sourceGuests) {
   Object.keys(guestLookup).forEach((key) => delete guestLookup[key]);
   guestNames = [];
+  const uniqueGuests = [];
 
   Object.keys(sourceGuests || {}).forEach((key) => {
     const guest = sourceGuests[key] || {};
@@ -5522,12 +5533,29 @@ function setActiveGuests(sourceGuests) {
       interests: Array.isArray(guest.interests) ? guest.interests : [],
       tools: guest.tools || '',
       socials: guest.socials && typeof guest.socials === 'object' ? guest.socials : {},
-      matches: Array.isArray(guest.matches) ? guest.matches : [],
+      matches: Array.isArray(guest.matches)
+        ? guest.matches.map((match) => ({
+            ...match,
+            socials: match && match.socials && typeof match.socials === 'object' ? match.socials : {},
+          }))
+        : [],
     };
 
+    uniqueGuests.push(normalizedGuest);
     guestLookup[normalizeKey(normalizedGuest.name)] = normalizedGuest;
     guestLookup[normalizeKey(key)] = normalizedGuest;
     guestNames.push(normalizedGuest.name);
+  });
+
+  uniqueGuests.forEach((guest) => {
+    guest.matches = (guest.matches || []).map((match) => {
+      if (match.socials && Object.keys(match.socials).length) return match;
+      const targetGuest = guestLookup[normalizeKey(match.name)];
+      return {
+        ...match,
+        socials: (targetGuest && targetGuest.socials) || {},
+      };
+    });
   });
 }
 
@@ -5906,6 +5934,7 @@ function renderProfile(guest) {
 function renderMatchCard(m, i, extraClass = '') {
   const className = extraClass ? `match-card ${extraClass}` : 'match-card';
   const encodedKey = encodeURIComponent(normalizeKey(m.name));
+  const socialEntries = getSocialEntries(m.socials);
   return `
     <div class="${className}" data-key="${encodedKey}" style="animation-delay: ${i * 0.08}s" onclick="navigateToMatch(decodeURIComponent(this.dataset.key))">
       <div class="match-card-top">
@@ -5917,6 +5946,23 @@ function renderMatchCard(m, i, extraClass = '') {
         <div class="match-score ${m.strength}">${m.strength === 'high' ? '⚡ Strong' : '✦ Good'}</div>
       </div>
       <div class="match-reason">${m.reason}</div>
+      ${socialEntries.length ? `
+        <div class="social-links match-social-links">
+          ${socialEntries.map((social) => `
+            <a
+              class="social-link"
+              href="${social.url}"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="${social.label}"
+              title="${social.label}"
+              onclick="event.stopPropagation()"
+            >
+              ${social.icon}
+            </a>
+          `).join('')}
+        </div>
+      ` : ''}
       <div class="match-shared">
         ${(m.shared || []).map(s => `<span class="shared-tag">${s}</span>`).join('')}
       </div>
