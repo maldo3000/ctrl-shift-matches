@@ -653,7 +653,7 @@ module.exports = async function handler(req, res) {
       eventApiId,
       eventId,
       explicitEventKey: eventSelection.explicitEvent || eventSelection.eventKey,
-      explicitEventLabel: query.event_label || eventSelection.eventLabel,
+      explicitEventLabel: query.event_label || '',
       approvalStatus,
     });
 

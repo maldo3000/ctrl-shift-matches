@@ -458,6 +458,18 @@ body {
     var(--surface);
 }
 
+.status-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s, border-color 0.25s;
+}
+
+.status-link:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
 .unlock-form {
   margin-top: 14px;
   display: grid;
@@ -5581,6 +5593,54 @@ function getGuestByKey(key) {
   return guestLookup[normalizeKey(key)] || null;
 }
 
+function shouldRenderEventHub() {
+  const p = new URLSearchParams(window.location.search);
+  const directParams = ['event', 'event_key', 'event_api_id', 'eventApiId', 'event_id', 'name', 'n', 'source'];
+  return !directParams.some((param) => p.has(param));
+}
+
+function renderEventHub() {
+  const staticEventCards = Object.keys(EVENT_REGISTRY).map((key) => {
+    const eventConfig = EVENT_REGISTRY[key];
+    const title = eventConfig.label || formatEventLabel(key);
+    const statusLabel = eventConfig.mode === 'fallback' ? '🔒 Archive' : 'Event';
+    const description =
+      eventConfig.mode === 'fallback'
+        ? 'Browse archived matches from previous CTRL SHIFT volumes.'
+        : 'Open event matches.';
+    const href = `?event=${encodeURIComponent(key)}`;
+
+    return `
+      <a class="status-card status-link" href="${href}">
+        <div class="status-label">${statusLabel}</div>
+        <h3>${title}</h3>
+        <p>${description}</p>
+      </a>
+    `;
+  });
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">CTRL SHIFT</div>
+      <h1>Choose Your <span class="highlight">Event</span></h1>
+      <p class="subtitle">Open current matches or browse archives</p>
+    </div>
+    <div class="archive-shell">
+      <div class="archive-grid">
+        <a class="status-card status-link vol10" href="?source=auto">
+          <div class="status-label">● Live</div>
+          <h3>Current Event</h3>
+          <p>Go to the active matchmaking page using live Luma sync.</p>
+        </a>
+        ${staticEventCards.join('')}
+      </div>
+    </div>
+    <div class="footer">
+      Built with ☕ for the CTRL SHIFT community
+    </div>
+  `;
+}
+
 function routeVol9() {
   const p = new URLSearchParams(window.location.search);
   const n = p.get('name') || p.get('n');
@@ -5799,18 +5859,30 @@ window.goBack = function() {
   url.searchParams.delete('name');
   url.searchParams.delete('n');
   window.history.pushState({}, '', url);
+  if (shouldRenderEventHub()) {
+    renderEventHub();
+    return;
+  }
   renderSearch();
 };
 
 // Handle browser back/forward
 window.addEventListener('popstate', () => {
+  if (shouldRenderEventHub()) {
+    renderEventHub();
+    return;
+  }
   routeVol9();
 });
 
 // Init
-initializeDataSource().then(() => {
-  routeVol9();
-});
+if (shouldRenderEventHub()) {
+  renderEventHub();
+} else {
+  initializeDataSource().then(() => {
+    routeVol9();
+  });
+}
 </script>
 </body>
 </html>
