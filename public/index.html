@@ -267,6 +267,36 @@ body {
   justify-content: center;
 }
 
+.social-links {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.social-link {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  transition: border-color 0.2s, transform 0.2s, color 0.2s;
+}
+
+.social-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
 .tag {
   font-size: 0.65rem;
   padding: 5px 10px;
@@ -5453,6 +5483,15 @@ let activeEventLabel = 'Vol. 9';
 let activeEventKey = '';
 let activeEventApiId = EVENT_API_ID_PARAM;
 let liveStatusMessage = 'Initializing event data...';
+const SOCIAL_META = {
+  linkedin: { label: 'LinkedIn', icon: 'in' },
+  github: { label: 'GitHub', icon: 'GH' },
+  instagram: { label: 'Instagram', icon: 'IG' },
+  twitter: { label: 'X', icon: 'X' },
+  telegram: { label: 'Telegram', icon: 'TG' },
+  youtube: { label: 'YouTube', icon: 'YT' },
+  website: { label: 'Website', icon: 'WWW' },
+};
 
 function formatEventLabel(raw) {
   const text = String(raw || '').trim();
@@ -5482,6 +5521,7 @@ function setActiveGuests(sourceGuests) {
       role: guest.role || 'Guest',
       interests: Array.isArray(guest.interests) ? guest.interests : [],
       tools: guest.tools || '',
+      socials: guest.socials && typeof guest.socials === 'object' ? guest.socials : {},
       matches: Array.isArray(guest.matches) ? guest.matches : [],
     };
 
@@ -5489,6 +5529,30 @@ function setActiveGuests(sourceGuests) {
     guestLookup[normalizeKey(key)] = normalizedGuest;
     guestNames.push(normalizedGuest.name);
   });
+}
+
+function getSafeExternalUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const prefixed = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const parsed = new URL(prefixed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+    return parsed.toString();
+  } catch (_error) {
+    return '';
+  }
+}
+
+function getSocialEntries(socials) {
+  if (!socials || typeof socials !== 'object') return [];
+  return Object.keys(SOCIAL_META)
+    .map((platform) => {
+      const url = getSafeExternalUrl(socials[platform]);
+      if (!url) return null;
+      return { ...SOCIAL_META[platform], platform, url };
+    })
+    .filter(Boolean);
 }
 
 function getHeaderLabel() {
@@ -5774,6 +5838,7 @@ function renderProfile(guest) {
   const limitedMatches = (guest.matches || []).slice(0, 5);
   const topStrongMatches = limitedMatches.filter(m => m.strength === 'high').slice(0, 2);
   const remainingMatches = limitedMatches.filter(m => !topStrongMatches.includes(m));
+  const socialEntries = getSocialEntries(guest.socials);
 
   const groupedCards = `
     ${topStrongMatches.length ? `<div class="group-label">⚡ Top strong matches</div>` : ''}
@@ -5800,6 +5865,22 @@ function renderProfile(guest) {
         ${guest.tools ? `
           <div class="profile-tags" style="margin-top: 8px">
             <span class="tag">🔧 ${guest.tools}</span>
+          </div>
+        ` : ''}
+        ${socialEntries.length ? `
+          <div class="social-links">
+            ${socialEntries.map((social) => `
+              <a
+                class="social-link"
+                href="${social.url}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="${social.label}"
+                title="${social.label}"
+              >
+                ${social.icon}
+              </a>
+            `).join('')}
           </div>
         ` : ''}
       </div>

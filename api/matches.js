@@ -274,6 +274,103 @@ function parseRoleFromText(value) {
   return compact;
 }
 
+function ensureHttpUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const prefixed = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+
+  try {
+    const parsed = new URL(prefixed);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+    return parsed.toString();
+  } catch (_error) {
+    return '';
+  }
+}
+
+function toHandle(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const parsed = new URL(raw);
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      if (parts.length) return parts[parts.length - 1].replace(/^@/, '');
+    } catch (_error) {
+      return '';
+    }
+  }
+
+  return raw.replace(/^@/, '').replace(/^\/+|\/+$/g, '');
+}
+
+function normalizeSocialUrl(platform, value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  if (platform === 'website') return ensureHttpUrl(raw);
+
+  const direct = ensureHttpUrl(raw);
+  if (direct) {
+    try {
+      const host = new URL(direct).hostname.toLowerCase();
+      if (
+        (platform === 'linkedin' && host.includes('linkedin.com')) ||
+        (platform === 'github' && host.includes('github.com')) ||
+        (platform === 'instagram' && host.includes('instagram.com')) ||
+        (platform === 'twitter' && (host.includes('x.com') || host.includes('twitter.com'))) ||
+        (platform === 'telegram' && host.includes('t.me')) ||
+        (platform === 'youtube' && host.includes('youtube.com'))
+      ) {
+        return direct;
+      }
+    } catch (_error) {
+      return '';
+    }
+  }
+
+  const handle = toHandle(raw);
+  if (!handle) return '';
+
+  if (platform === 'linkedin') return `https://www.linkedin.com/in/${handle}`;
+  if (platform === 'github') return `https://github.com/${handle}`;
+  if (platform === 'instagram') return `https://www.instagram.com/${handle}`;
+  if (platform === 'twitter') return `https://x.com/${handle}`;
+  if (platform === 'telegram') return `https://t.me/${handle}`;
+  if (platform === 'youtube') return `https://www.youtube.com/@${handle}`;
+
+  return '';
+}
+
+function inferSocialPlatform(label, questionType, value) {
+  const normalizedLabel = normalizeText(label);
+  const normalizedType = normalizeText(questionType);
+  const normalizedValue = normalizeText(value);
+
+  const checks = [
+    { platform: 'linkedin', pattern: /(linkedin|linked in)/ },
+    { platform: 'github', pattern: /(github|git hub)/ },
+    { platform: 'instagram', pattern: /(instagram|insta)/ },
+    { platform: 'twitter', pattern: /(twitter|x\.com|x handle)/ },
+    { platform: 'telegram', pattern: /(telegram)/ },
+    { platform: 'youtube', pattern: /(youtube)/ },
+  ];
+
+  for (const check of checks) {
+    if (check.pattern.test(normalizedLabel) || check.pattern.test(normalizedType) || check.pattern.test(normalizedValue)) {
+      return check.platform;
+    }
+  }
+
+  if (normalizedType === 'url' || /website|portfolio|site/.test(normalizedLabel)) {
+    return 'website';
+  }
+
+  return '';
+}
+
 function buildGuestProfile(rawGuest) {
   const name =
     rawGuest.user_name ||
@@ -290,9 +387,19 @@ function buildGuestProfile(rawGuest) {
   const toolEntries = [];
   const roleCandidates = [];
   const networkingCandidates = [];
+  const socialCandidates = {
+    linkedin: [],
+    github: [],
+    instagram: [],
+    twitter: [],
+    telegram: [],
+    youtube: [],
+    website: [],
+  };
 
   answers.forEach((answer) => {
     const label = normalizeText(answer && answer.label);
+    const questionType = normalizeText(answer && answer.question_type);
     const values = flattenAnswerValue(answer);
     if (!values.length) return;
 
@@ -326,11 +433,28 @@ function buildGuestProfile(rawGuest) {
         if (style) networkingCandidates.push(style);
       });
     }
+
+    values.forEach((value) => {
+      const platform = inferSocialPlatform(label, questionType, value);
+      if (!platform || !socialCandidates[platform]) return;
+      socialCandidates[platform].push(value);
+    });
   });
 
   const dedupedTools = dedupeCommaList(toolEntries);
   const role = roleCandidates[0] || 'Guest';
   const networkingStyle = networkingCandidates[0] || '';
+  const socials = {};
+
+  Object.keys(socialCandidates).forEach((platform) => {
+    const values = socialCandidates[platform];
+    for (const value of values) {
+      const normalized = normalizeSocialUrl(platform, value);
+      if (!normalized) continue;
+      socials[platform] = normalized;
+      break;
+    }
+  });
 
   return {
     id: rawGuest.user_api_id || rawGuest.api_id || normalizeKey(name),
@@ -339,6 +463,7 @@ function buildGuestProfile(rawGuest) {
     interests: [...interestSet],
     tools: dedupedTools,
     networkingStyle,
+    socials,
   };
 }
 
@@ -464,6 +589,7 @@ function buildMatches(guestProfiles) {
       role: profile.role || 'Guest',
       interests: profile.interests,
       tools: profile.tools.join(', '),
+      socials: profile.socials || {},
       matches: sortedMatches,
     };
   });
