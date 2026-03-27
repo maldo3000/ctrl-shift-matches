@@ -510,42 +510,6 @@ body {
   border-color: var(--accent);
 }
 
-.raffle-entry {
-  margin-top: 16px;
-  display: grid;
-  gap: 10px;
-}
-
-.raffle-entry p {
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  line-height: 1.5;
-}
-
-.raffle-link-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--accent);
-  background: #c8ff0018;
-  color: var(--accent);
-  font-family: 'Space Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform 0.2s, background 0.2s;
-}
-
-.raffle-link-btn:hover {
-  transform: translateY(-1px);
-  background: #c8ff0033;
-}
-
 .raffle-shell {
   animation: fadeUp 0.35s ease both;
 }
@@ -5857,9 +5821,8 @@ function getHeaderSubtitle() {
   return liveStatusMessage;
 }
 
-function isRaffleView() {
-  const p = new URLSearchParams(window.location.search);
-  return String(p.get('view') || '').toLowerCase() === 'raffle';
+function isRaffleRoute() {
+  return /^\/raffle\/?$/.test(window.location.pathname);
 }
 
 function getRaffleEligibleGuests() {
@@ -5913,7 +5876,7 @@ function updateRaffleDisplay(name, options = {}) {
   const value = String(name || '').trim();
   raffleState.displayedName = value;
 
-  if (!isRaffleView()) return;
+  if (!isRaffleRoute()) return;
 
   const nameEl = document.getElementById('raffleName');
   const badgeEl = document.getElementById('raffleWinnerBadge');
@@ -5922,7 +5885,7 @@ function updateRaffleDisplay(name, options = {}) {
 }
 
 function launchRaffleConfetti() {
-  if (!isRaffleView()) return;
+  if (!isRaffleRoute()) return;
   const confettiRoot = document.getElementById('raffleConfetti');
   if (!confettiRoot) return;
 
@@ -5982,7 +5945,7 @@ function startRaffleSpin() {
   let step = 0;
 
   const tick = () => {
-    if (!isRaffleView()) {
+    if (!isRaffleRoute()) {
       clearRaffleTimers();
       raffleState.spinning = false;
       return;
@@ -6016,26 +5979,12 @@ function resetRafflePool() {
   renderRaffle();
 }
 
-function openRaffle() {
-  const url = new URL(window.location);
-  url.searchParams.delete('name');
-  url.searchParams.delete('n');
-  url.searchParams.set('view', 'raffle');
-  if (!url.searchParams.get('source')) url.searchParams.set('source', 'live');
-  window.history.pushState({}, '', url);
-  renderRaffle();
-}
-
 function closeRaffle() {
   const url = new URL(window.location);
-  url.searchParams.delete('view');
-  window.history.pushState({}, '', url);
-
-  if (shouldRenderEventHub()) {
-    renderEventHub();
-    return;
-  }
-  routeVol9();
+  url.pathname = '/';
+  url.searchParams.delete('name');
+  url.searchParams.delete('n');
+  window.location.assign(url.toString());
 }
 
 function renderRaffle() {
@@ -6057,7 +6006,7 @@ function renderRaffle() {
       <p class="subtitle">${subtitle}</p>
     </div>
     <div class="raffle-shell">
-      <button class="back-btn" onclick="closeRaffleView()">← Back</button>
+      <button class="back-btn" onclick="closeRaffleRoute()">← Back</button>
       <div class="raffle-card">
         <div class="raffle-metadata">
           <span class="raffle-meta-pill ${sourceClass}">${sourceLabel}</span>
@@ -6193,8 +6142,9 @@ function getGuestByKey(key) {
 }
 
 function shouldRenderEventHub() {
+  if (isRaffleRoute()) return false;
   const p = new URLSearchParams(window.location.search);
-  const directParams = ['event', 'event_key', 'event_api_id', 'eventApiId', 'event_id', 'name', 'n', 'source', 'view'];
+  const directParams = ['event', 'event_key', 'event_api_id', 'eventApiId', 'event_id', 'name', 'n', 'source'];
   return !directParams.some((param) => p.has(param));
 }
 
@@ -6231,11 +6181,6 @@ function renderEventHub() {
           <h3>Current Event</h3>
           <p>Go to the active matchmaking page using live Luma sync.</p>
         </a>
-        <a class="status-card status-link" href="?source=live&view=raffle">
-          <div class="status-label">🎁 Raffle</div>
-          <h3>Live Prize Draw</h3>
-          <p>Open the spinner and pick a random winner from current event attendees.</p>
-        </a>
         ${staticEventCards.join('')}
       </div>
     </div>
@@ -6246,7 +6191,7 @@ function renderEventHub() {
 }
 
 function routeVol9() {
-  if (isRaffleView()) {
+  if (isRaffleRoute()) {
     renderRaffle();
     return;
   }
@@ -6321,12 +6266,6 @@ function renderSearch() {
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="Type your name to find matches..." autocomplete="off" autofocus />
       </div>
-      <div class="raffle-entry">
-        <button type="button" class="raffle-link-btn" onclick="goToRaffle()">
-          🎁 Open Raffle Spinner
-        </button>
-        <p>Use the live attendee list to randomly spin and choose a prize winner.</p>
-      </div>
       <div id="searchResults"></div>
     </div>
     <div class="footer">
@@ -6384,8 +6323,7 @@ function selectGuest(key) {
 }
 
 window.selectGuest = selectGuest;
-window.goToRaffle = openRaffle;
-window.closeRaffleView = closeRaffle;
+window.closeRaffleRoute = closeRaffle;
 
 function renderProfile(guest) {
   const limitedMatches = (guest.matches || []).slice(0, 5);
