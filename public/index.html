@@ -5710,7 +5710,7 @@ let activeEventApiId = EVENT_API_ID_PARAM;
 let liveStatusMessage = 'Initializing event data...';
 const RAFFLE_HISTORY_LIMIT = 8;
 const RAFFLE_SPIN_DURATION_MS = 8000;
-const RAFFLE_DRUM_ROLL_SRC = '/raffle-drum-roll.mp3';
+const RAFFLE_DRUM_ROLL_SRC = '/raffle-drum-roll-v2.mp3?v=20260327a';
 const raffleState = {
   spinning: false,
   displayedName: '',
@@ -5873,6 +5873,8 @@ function getRaffleRollAudio() {
   audio.preload = 'auto';
   audio.loop = false;
   audio.volume = 1;
+  audio.playsInline = true;
+  audio.load();
   raffleAudioState.rollAudio = audio;
   return audio;
 }
