@@ -5709,6 +5709,8 @@ let activeEventKey = '';
 let activeEventApiId = EVENT_API_ID_PARAM;
 let liveStatusMessage = 'Initializing event data...';
 const RAFFLE_HISTORY_LIMIT = 8;
+const RAFFLE_SPIN_DURATION_MS = 8000;
+const RAFFLE_DRUM_ROLL_SRC = '/raffle-drum-roll.mp3';
 const raffleState = {
   spinning: false,
   displayedName: '',
@@ -5720,10 +5722,7 @@ const raffleState = {
   confettiTimerId: null,
 };
 const raffleAudioState = {
-  context: null,
-  noiseBuffer: null,
-  rollIntervalId: null,
-  masterGain: null,
+  rollAudio: null,
 };
 const SOCIAL_META = {
   linkedin: { label: 'LinkedIn', icon: 'in' },
@@ -5867,170 +5866,38 @@ function secureRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
 
-function ensureRaffleAudioContext() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return null;
+function getRaffleRollAudio() {
+  if (raffleAudioState.rollAudio) return raffleAudioState.rollAudio;
 
-  if (!raffleAudioState.context) {
-    raffleAudioState.context = new AudioContextClass();
+  const audio = new Audio(RAFFLE_DRUM_ROLL_SRC);
+  audio.preload = 'auto';
+  audio.loop = false;
+  audio.volume = 1;
+  raffleAudioState.rollAudio = audio;
+  return audio;
+}
+
+function stopRaffleDrumRoll() {
+  const audio = raffleAudioState.rollAudio;
+  if (!audio) return;
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+  } catch (_error) {}
+}
+
+async function startRaffleDrumRoll() {
+  const audio = getRaffleRollAudio();
+  if (!audio) return false;
+
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+    await audio.play();
+    return true;
+  } catch (_error) {
+    return false;
   }
-
-  return raffleAudioState.context;
-}
-
-async function unlockRaffleAudioContext() {
-  const context = ensureRaffleAudioContext();
-  if (!context) return null;
-
-  if (context.state === 'suspended') {
-    try {
-      await context.resume();
-    } catch (_error) {
-      return null;
-    }
-  }
-
-  return context.state === 'running' ? context : null;
-}
-
-function getRaffleMasterGain(context) {
-  if (!context) return null;
-
-  if (!raffleAudioState.masterGain) {
-    const gain = context.createGain();
-    gain.gain.setValueAtTime(0.95, context.currentTime);
-    gain.connect(context.destination);
-    raffleAudioState.masterGain = gain;
-  }
-
-  return raffleAudioState.masterGain;
-}
-
-function getRaffleNoiseBuffer(context) {
-  if (!context) return null;
-
-  if (raffleAudioState.noiseBuffer) return raffleAudioState.noiseBuffer;
-
-  const duration = 0.2;
-  const buffer = context.createBuffer(1, Math.floor(context.sampleRate * duration), context.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i += 1) {
-    data[i] = Math.random() * 2 - 1;
-  }
-
-  raffleAudioState.noiseBuffer = buffer;
-  return buffer;
-}
-
-function playRaffleSnareTick(level = 0.28, duration = 0.09, cutoff = 1100) {
-  const context = ensureRaffleAudioContext();
-  if (!context || context.state !== 'running') return;
-
-  const noiseBuffer = getRaffleNoiseBuffer(context);
-  const masterGain = getRaffleMasterGain(context);
-  if (!noiseBuffer || !masterGain) return;
-
-  const source = context.createBufferSource();
-  source.buffer = noiseBuffer;
-
-  const filter = context.createBiquadFilter();
-  filter.type = 'highpass';
-  filter.frequency.setValueAtTime(cutoff, context.currentTime);
-
-  const gain = context.createGain();
-  const now = context.currentTime;
-  gain.gain.setValueAtTime(Math.max(level, 0.001), now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-  source.connect(filter);
-  filter.connect(gain);
-  gain.connect(masterGain);
-
-  source.start(now);
-  source.stop(now + duration);
-}
-
-function playRaffleTomTick(frequency = 170, level = 0.2, duration = 0.09) {
-  const context = ensureRaffleAudioContext();
-  if (!context || context.state !== 'running') return;
-
-  const masterGain = getRaffleMasterGain(context);
-  if (!masterGain) return;
-
-  const osc = context.createOscillator();
-  const filter = context.createBiquadFilter();
-  const gain = context.createGain();
-  const now = context.currentTime;
-
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(frequency, now);
-  osc.frequency.exponentialRampToValueAtTime(Math.max(70, frequency * 0.55), now + duration);
-
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(1200, now);
-
-  gain.gain.setValueAtTime(Math.max(level, 0.001), now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-  osc.connect(filter);
-  filter.connect(gain);
-  gain.connect(masterGain);
-  osc.start(now);
-  osc.stop(now + duration + 0.02);
-}
-
-function playRaffleWinnerHit() {
-  const context = ensureRaffleAudioContext();
-  if (!context || context.state !== 'running') return;
-
-  playRaffleSnareTick(0.46, 0.14, 700);
-  playRaffleTomTick(210, 0.3, 0.14);
-
-  const osc = context.createOscillator();
-  const gain = context.createGain();
-  const masterGain = getRaffleMasterGain(context);
-  if (!masterGain) return;
-  const now = context.currentTime;
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(240, now);
-  osc.frequency.exponentialRampToValueAtTime(70, now + 0.24);
-  gain.gain.setValueAtTime(0.34, now);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
-  osc.connect(gain);
-  gain.connect(masterGain);
-  osc.start(now);
-  osc.stop(now + 0.28);
-}
-
-function stopRaffleDrumRoll(playFinalHit = false) {
-  if (raffleAudioState.rollIntervalId) {
-    window.clearInterval(raffleAudioState.rollIntervalId);
-    raffleAudioState.rollIntervalId = null;
-  }
-
-  if (playFinalHit) {
-    playRaffleWinnerHit();
-  }
-}
-
-function startRaffleDrumRoll() {
-  if (raffleAudioState.rollIntervalId) return;
-
-  const context = ensureRaffleAudioContext();
-  if (!context || context.state !== 'running') return;
-
-  let step = 0;
-  playRaffleTomTick(165, 0.22, 0.1);
-  playRaffleSnareTick(0.24, 0.08, 1300);
-  raffleAudioState.rollIntervalId = window.setInterval(() => {
-    const rollPhase = step % 4;
-    const baseFreq = 150 + secureRandomInt(55);
-    playRaffleTomTick(baseFreq + rollPhase * 14, 0.18 + Math.random() * 0.1, 0.09);
-    if (rollPhase === 1 || rollPhase === 3) {
-      playRaffleSnareTick(0.2 + Math.random() * 0.1, 0.07, 900 + secureRandomInt(700));
-    }
-    step += 1;
-  }, 95);
 }
 
 function clearRaffleTimers() {
@@ -6042,7 +5909,7 @@ function clearRaffleTimers() {
     window.clearTimeout(raffleState.confettiTimerId);
     raffleState.confettiTimerId = null;
   }
-  stopRaffleDrumRoll(false);
+  stopRaffleDrumRoll();
 }
 
 function updateRaffleDisplay(name, options = {}) {
@@ -6078,7 +5945,7 @@ function launchRaffleConfetti() {
 }
 
 function finalizeRaffleSpin(winnerName) {
-  stopRaffleDrumRoll(true);
+  stopRaffleDrumRoll();
 
   const winner = String(winnerName || '').trim();
   raffleState.spinning = false;
@@ -6110,19 +5977,15 @@ async function startRaffleSpin() {
   clearRaffleTimers();
   raffleState.spinning = true;
   raffleState.statusMessage = `Spinning through ${pool.length} attendees...`;
-  const audioContext = await unlockRaffleAudioContext();
-  if (!audioContext) {
+  const rollStarted = await startRaffleDrumRoll();
+  if (!rollStarted) {
     raffleState.statusMessage = `Spinning through ${pool.length} attendees... (sound unavailable on this browser/device)`;
   }
-  startRaffleDrumRoll();
 
   const winnerName = pool[secureRandomInt(pool.length)];
-  const winnerIndex = pool.indexOf(winnerName);
   let cursor = secureRandomInt(pool.length);
-  const laps = 18 + secureRandomInt(18);
-  const distance = (winnerIndex - cursor + pool.length) % pool.length;
-  const totalSteps = laps + distance;
-  let step = 0;
+  const startedAt = Date.now();
+  const totalDurationMs = RAFFLE_SPIN_DURATION_MS;
 
   const tick = () => {
     if (!isRaffleRoute()) {
@@ -6131,15 +5994,16 @@ async function startRaffleSpin() {
       return;
     }
 
-    updateRaffleDisplay(pool[cursor], { winner: false });
-    if (step >= totalSteps) {
+    const elapsed = Date.now() - startedAt;
+    if (elapsed >= totalDurationMs) {
+      updateRaffleDisplay(winnerName, { winner: true });
       finalizeRaffleSpin(winnerName);
       return;
     }
 
-    step += 1;
+    updateRaffleDisplay(pool[cursor], { winner: false });
     cursor = (cursor + 1) % pool.length;
-    const progress = step / Math.max(totalSteps, 1);
+    const progress = elapsed / Math.max(totalDurationMs, 1);
     const delay = 40 + Math.round(progress * progress * 250);
     raffleState.spinTimerId = window.setTimeout(tick, delay);
   };
