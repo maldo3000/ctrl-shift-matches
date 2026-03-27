@@ -25,6 +25,12 @@ The page supports query parameters, for example:
 http://localhost:3000?name=Sahil%20Lulla
 ```
 
+Raffle mode query param:
+
+```
+http://localhost:3000?source=live&view=raffle
+```
+
 ## Data source modes
 
 Use `source` query param to control mode:

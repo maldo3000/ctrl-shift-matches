@@ -510,6 +510,247 @@ body {
   border-color: var(--accent);
 }
 
+.raffle-entry {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.raffle-entry p {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.raffle-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--accent);
+  background: #c8ff0018;
+  color: var(--accent);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.raffle-link-btn:hover {
+  transform: translateY(-1px);
+  background: #c8ff0033;
+}
+
+.raffle-shell {
+  animation: fadeUp 0.35s ease both;
+}
+
+.raffle-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.raffle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--pink), var(--blue));
+}
+
+.raffle-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.raffle-meta-pill {
+  font-size: 0.62rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  padding: 4px 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.raffle-meta-pill.live {
+  border-color: #3dff8e55;
+  color: #3dff8e;
+}
+
+.raffle-meta-pill.fallback {
+  border-color: #ff8e3d55;
+  color: #ffbf8e;
+}
+
+.raffle-display {
+  min-height: 130px;
+  border: 1px solid #c8ff0033;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(200, 255, 0, 0.12), rgba(0, 0, 0, 0) 45%),
+    radial-gradient(circle at 88% 90%, rgba(255, 61, 142, 0.09), rgba(0, 0, 0, 0) 40%),
+    var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 18px;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.raffle-display-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.raffle-name {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.raffle-winner-badge {
+  margin-top: 8px;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.raffle-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.raffle-btn {
+  flex: 1;
+  min-width: 170px;
+  border-radius: 12px;
+  border: 1px solid var(--accent);
+  padding: 13px 16px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s, background 0.2s;
+}
+
+.raffle-btn.primary {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.raffle-btn.secondary {
+  background: transparent;
+  color: var(--text-dim);
+  border-color: var(--border);
+}
+
+.raffle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.raffle-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.raffle-status {
+  margin-top: 12px;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.raffle-history {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.raffle-history h4 {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.raffle-history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.raffle-history-item {
+  font-size: 0.68rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.raffle-confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.raffle-confetti-piece {
+  position: absolute;
+  top: -20px;
+  left: var(--x);
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--color);
+  opacity: 0.88;
+  transform: rotate(var(--r));
+  animation: confettiDrop 1.4s ease forwards;
+  animation-delay: var(--d);
+}
+
+@keyframes confettiDrop {
+  0% {
+    transform: translate3d(0, -24px, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(calc((var(--x) - 50vw) * 0.1), 300px, 0) rotate(540deg);
+    opacity: 0;
+  }
+}
+
 .unlock-form {
   margin-top: 14px;
   display: grid;
@@ -576,6 +817,12 @@ body {
   .search-box input,
   .unlock-form input {
     font-size: 16px;
+  }
+  .raffle-card {
+    padding: 18px 16px;
+  }
+  .raffle-btn {
+    min-width: 100%;
   }
 }
 </style>
@@ -5497,6 +5744,17 @@ let activeEventLabel = 'Vol. 9';
 let activeEventKey = '';
 let activeEventApiId = EVENT_API_ID_PARAM;
 let liveStatusMessage = 'Initializing event data...';
+const RAFFLE_HISTORY_LIMIT = 8;
+const raffleState = {
+  spinning: false,
+  displayedName: '',
+  lastWinner: '',
+  statusMessage: '',
+  excludedWinners: new Set(),
+  winnerHistory: [],
+  spinTimerId: null,
+  confettiTimerId: null,
+};
 const SOCIAL_META = {
   linkedin: { label: 'LinkedIn', icon: 'in' },
   github: { label: 'GitHub', icon: 'GH' },
@@ -5599,6 +5857,251 @@ function getHeaderSubtitle() {
   return liveStatusMessage;
 }
 
+function isRaffleView() {
+  const p = new URLSearchParams(window.location.search);
+  return String(p.get('view') || '').toLowerCase() === 'raffle';
+}
+
+function getRaffleEligibleGuests() {
+  const seen = new Set();
+  const uniqueNames = [];
+
+  guestNames.forEach((name) => {
+    const normalized = normalizeKey(name);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    uniqueNames.push(name);
+  });
+
+  return uniqueNames;
+}
+
+function getRafflePool() {
+  const eligible = getRaffleEligibleGuests();
+  return eligible.filter((name) => !raffleState.excludedWinners.has(normalizeKey(name)));
+}
+
+function secureRandomInt(max) {
+  if (!Number.isInteger(max) || max <= 0) return 0;
+
+  if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+    const limit = Math.floor(0x100000000 / max) * max;
+    const buffer = new Uint32Array(1);
+    let value = 0;
+    do {
+      window.crypto.getRandomValues(buffer);
+      value = buffer[0];
+    } while (value >= limit);
+    return value % max;
+  }
+
+  return Math.floor(Math.random() * max);
+}
+
+function clearRaffleTimers() {
+  if (raffleState.spinTimerId) {
+    window.clearTimeout(raffleState.spinTimerId);
+    raffleState.spinTimerId = null;
+  }
+  if (raffleState.confettiTimerId) {
+    window.clearTimeout(raffleState.confettiTimerId);
+    raffleState.confettiTimerId = null;
+  }
+}
+
+function updateRaffleDisplay(name, options = {}) {
+  const value = String(name || '').trim();
+  raffleState.displayedName = value;
+
+  if (!isRaffleView()) return;
+
+  const nameEl = document.getElementById('raffleName');
+  const badgeEl = document.getElementById('raffleWinnerBadge');
+  if (nameEl) nameEl.textContent = value || 'Waiting for spin...';
+  if (badgeEl) badgeEl.textContent = options.winner ? 'Winner Selected' : '';
+}
+
+function launchRaffleConfetti() {
+  if (!isRaffleView()) return;
+  const confettiRoot = document.getElementById('raffleConfetti');
+  if (!confettiRoot) return;
+
+  const colors = ['#c8ff00', '#ff3d8e', '#3d8eff', '#3dff8e', '#ff8e3d'];
+  const pieces = Array.from({ length: 28 }).map(() => {
+    const x = `${secureRandomInt(100)}%`;
+    const rotate = `${secureRandomInt(360)}deg`;
+    const delay = `${secureRandomInt(350)}ms`;
+    const color = colors[secureRandomInt(colors.length)];
+    return `<span class="raffle-confetti-piece" style="--x:${x};--r:${rotate};--d:${delay};--color:${color}"></span>`;
+  });
+
+  confettiRoot.innerHTML = pieces.join('');
+  raffleState.confettiTimerId = window.setTimeout(() => {
+    if (confettiRoot) confettiRoot.innerHTML = '';
+  }, 1800);
+}
+
+function finalizeRaffleSpin(winnerName) {
+  const winner = String(winnerName || '').trim();
+  raffleState.spinning = false;
+  raffleState.lastWinner = winner;
+  raffleState.statusMessage = winner
+    ? `${winner} wins this round.`
+    : 'Unable to select a winner.';
+
+  if (winner) {
+    raffleState.excludedWinners.add(normalizeKey(winner));
+    raffleState.winnerHistory.unshift(winner);
+    raffleState.winnerHistory = raffleState.winnerHistory.slice(0, RAFFLE_HISTORY_LIMIT);
+  }
+
+  renderRaffle();
+  launchRaffleConfetti();
+}
+
+function startRaffleSpin() {
+  if (raffleState.spinning) return;
+
+  const pool = getRafflePool();
+  if (!pool.length) {
+    raffleState.statusMessage = 'Everyone in this event has already won. Reset the pool to spin again.';
+    renderRaffle();
+    return;
+  }
+
+  clearRaffleTimers();
+  raffleState.spinning = true;
+  raffleState.statusMessage = `Spinning through ${pool.length} attendees...`;
+
+  const winnerName = pool[secureRandomInt(pool.length)];
+  const winnerIndex = pool.indexOf(winnerName);
+  let cursor = secureRandomInt(pool.length);
+  const laps = 18 + secureRandomInt(18);
+  const distance = (winnerIndex - cursor + pool.length) % pool.length;
+  const totalSteps = laps + distance;
+  let step = 0;
+
+  const tick = () => {
+    if (!isRaffleView()) {
+      clearRaffleTimers();
+      raffleState.spinning = false;
+      return;
+    }
+
+    updateRaffleDisplay(pool[cursor], { winner: false });
+    if (step >= totalSteps) {
+      finalizeRaffleSpin(winnerName);
+      return;
+    }
+
+    step += 1;
+    cursor = (cursor + 1) % pool.length;
+    const progress = step / Math.max(totalSteps, 1);
+    const delay = 40 + Math.round(progress * progress * 250);
+    raffleState.spinTimerId = window.setTimeout(tick, delay);
+  };
+
+  tick();
+  renderRaffle();
+}
+
+function resetRafflePool() {
+  clearRaffleTimers();
+  raffleState.spinning = false;
+  raffleState.excludedWinners.clear();
+  raffleState.winnerHistory = [];
+  raffleState.lastWinner = '';
+  raffleState.displayedName = '';
+  raffleState.statusMessage = 'Winner pool reset. Ready for a new round.';
+  renderRaffle();
+}
+
+function openRaffle() {
+  const url = new URL(window.location);
+  url.searchParams.delete('name');
+  url.searchParams.delete('n');
+  url.searchParams.set('view', 'raffle');
+  if (!url.searchParams.get('source')) url.searchParams.set('source', 'live');
+  window.history.pushState({}, '', url);
+  renderRaffle();
+}
+
+function closeRaffle() {
+  const url = new URL(window.location);
+  url.searchParams.delete('view');
+  window.history.pushState({}, '', url);
+
+  if (shouldRenderEventHub()) {
+    renderEventHub();
+    return;
+  }
+  routeVol9();
+}
+
+function renderRaffle() {
+  const eligibleCount = getRaffleEligibleGuests().length;
+  const remainingCount = getRafflePool().length;
+  const displayedName = raffleState.displayedName || raffleState.lastWinner || '';
+  const spinLabel = raffleState.spinning ? 'Spinning...' : raffleState.lastWinner ? 'Spin Again' : 'Start Spin';
+  const sourceClass = activeDataSource === 'live' ? 'live' : 'fallback';
+  const sourceLabel = activeDataSource === 'live' ? 'Live Luma attendees' : 'Fallback attendee list';
+  const subtitle =
+    activeDataSource === 'live'
+      ? 'Live attendees synced from Luma are in this raffle.'
+      : 'Live sync was unavailable, so this raffle is using backup guest data.';
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">${getHeaderLabel()}</div>
+      <h1>Event <span class="highlight">Raffle</span></h1>
+      <p class="subtitle">${subtitle}</p>
+    </div>
+    <div class="raffle-shell">
+      <button class="back-btn" onclick="closeRaffleView()">← Back</button>
+      <div class="raffle-card">
+        <div class="raffle-metadata">
+          <span class="raffle-meta-pill ${sourceClass}">${sourceLabel}</span>
+          <span class="raffle-meta-pill">${activeEventLabel}</span>
+          <span class="raffle-meta-pill">${remainingCount}/${eligibleCount} remaining</span>
+        </div>
+        <div class="raffle-display" aria-live="polite">
+          <div>
+            <div class="raffle-display-label">Current pick</div>
+            <div class="raffle-name" id="raffleName">${displayedName || 'Waiting for spin...'}</div>
+            <div class="raffle-winner-badge" id="raffleWinnerBadge">${raffleState.lastWinner && !raffleState.spinning ? 'Winner Selected' : ''}</div>
+          </div>
+          <div class="raffle-confetti" id="raffleConfetti"></div>
+        </div>
+        <div class="raffle-controls">
+          <button class="raffle-btn primary" id="raffleSpinBtn" ${raffleState.spinning || !remainingCount ? 'disabled' : ''}>
+            ${spinLabel}
+          </button>
+          <button class="raffle-btn secondary" id="raffleResetBtn" ${raffleState.spinning ? 'disabled' : ''}>
+            Reset Winners
+          </button>
+        </div>
+        <div class="raffle-status">${raffleState.statusMessage || 'Tap spin to select a random winner from this event.'}</div>
+        ${raffleState.winnerHistory.length ? `
+          <div class="raffle-history">
+            <h4>Recent winners</h4>
+            <div class="raffle-history-list">
+              ${raffleState.winnerHistory.map((name) => `<span class="raffle-history-item">${name}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+    <div class="footer">
+      Built with ☕ for the CTRL SHIFT community
+    </div>
+  `;
+
+  const spinBtn = document.getElementById('raffleSpinBtn');
+  const resetBtn = document.getElementById('raffleResetBtn');
+  if (spinBtn) spinBtn.addEventListener('click', startRaffleSpin);
+  if (resetBtn) resetBtn.addEventListener('click', resetRafflePool);
+}
+
 async function initializeDataSource() {
   const fallbackGuests = (selectedEventConfig && selectedEventConfig.guests) || GUESTS;
   setActiveGuests(fallbackGuests);
@@ -5691,7 +6194,7 @@ function getGuestByKey(key) {
 
 function shouldRenderEventHub() {
   const p = new URLSearchParams(window.location.search);
-  const directParams = ['event', 'event_key', 'event_api_id', 'eventApiId', 'event_id', 'name', 'n', 'source'];
+  const directParams = ['event', 'event_key', 'event_api_id', 'eventApiId', 'event_id', 'name', 'n', 'source', 'view'];
   return !directParams.some((param) => p.has(param));
 }
 
@@ -5728,6 +6231,11 @@ function renderEventHub() {
           <h3>Current Event</h3>
           <p>Go to the active matchmaking page using live Luma sync.</p>
         </a>
+        <a class="status-card status-link" href="?source=live&view=raffle">
+          <div class="status-label">🎁 Raffle</div>
+          <h3>Live Prize Draw</h3>
+          <p>Open the spinner and pick a random winner from current event attendees.</p>
+        </a>
         ${staticEventCards.join('')}
       </div>
     </div>
@@ -5738,6 +6246,11 @@ function renderEventHub() {
 }
 
 function routeVol9() {
+  if (isRaffleView()) {
+    renderRaffle();
+    return;
+  }
+
   const p = new URLSearchParams(window.location.search);
   const n = p.get('name') || p.get('n');
   if (n) {
@@ -5808,6 +6321,12 @@ function renderSearch() {
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="Type your name to find matches..." autocomplete="off" autofocus />
       </div>
+      <div class="raffle-entry">
+        <button type="button" class="raffle-link-btn" onclick="goToRaffle()">
+          🎁 Open Raffle Spinner
+        </button>
+        <p>Use the live attendee list to randomly spin and choose a prize winner.</p>
+      </div>
       <div id="searchResults"></div>
     </div>
     <div class="footer">
@@ -5865,6 +6384,8 @@ function selectGuest(key) {
 }
 
 window.selectGuest = selectGuest;
+window.goToRaffle = openRaffle;
+window.closeRaffleView = closeRaffle;
 
 function renderProfile(guest) {
   const limitedMatches = (guest.matches || []).slice(0, 5);
