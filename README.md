@@ -42,6 +42,7 @@ Use `source` query param to control mode:
 Event selection query params:
 
 - `?event=vol11` (event key; resolved via `LUMA_EVENT_MAP`)
+- `?event=vol10` (archived event key; resolved via `LUMA_EVENT_MAP`)
 - `?event=vol9` (built-in static archive event in this repo)
 - `?event_api_id=evt-...` (direct event override)
 - `?event_id=...` (fallback if you use internal event id)
@@ -53,12 +54,13 @@ https://yourdomain.com
 https://yourdomain.com?source=auto
 https://yourdomain.com?source=live
 https://yourdomain.com?source=fallback
+https://yourdomain.com?event=vol10
 https://yourdomain.com?event=vol9
 https://yourdomain.com?source=live&event=vol11
 https://yourdomain.com?source=live&event_api_id=evt-AIHKhl74s8lpCUH
 ```
 
-Root path (`/`) now opens an event hub page instead of jumping straight into a specific event.
+Root path (`/`) opens an event hub page. Archived event routes (like `vol10` and `vol9`) require the archive password before matches are shown.
 
 Event labels are automatic for live events: the API reads the Luma event title and extracts `Vol. #` when present (e.g. `CTRL SHIFT Vol. 12`).
 

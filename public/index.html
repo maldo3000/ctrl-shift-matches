@@ -5693,9 +5693,15 @@ const EVENT_ID_PARAM = String(params.get('event_id') || '').trim();
 const SELECTED_EVENT_KEY = normalizeKey(EVENT_PARAM);
 
 const EVENT_REGISTRY = {
+  vol10: {
+    label: 'Vol. 10 Archive',
+    mode: 'live',
+    archived: true,
+  },
   vol9: {
     label: 'Vol. 9 Archive',
     mode: 'fallback',
+    archived: true,
     guests: GUESTS,
   },
 };
@@ -6099,7 +6105,10 @@ function renderRaffle() {
 }
 
 async function initializeDataSource() {
-  const fallbackGuests = (selectedEventConfig && selectedEventConfig.guests) || GUESTS;
+  const hasScopedFallbackGuests = !!(selectedEventConfig && selectedEventConfig.guests);
+  const fallbackGuests = selectedEventConfig
+    ? (selectedEventConfig.guests || {})
+    : GUESTS;
   setActiveGuests(fallbackGuests);
   activeEventKey = SELECTED_EVENT_KEY;
   activeEventLabel = (selectedEventConfig && selectedEventConfig.label) || formatEventLabel(EVENT_PARAM || EVENT_API_ID_PARAM || EVENT_ID_PARAM);
@@ -6112,7 +6121,9 @@ async function initializeDataSource() {
   }
 
   if (SOURCE_MODE === 'fallback') {
-    liveStatusMessage = `${activeEventLabel} · Backup dataset active (forced fallback mode)`;
+    liveStatusMessage = hasScopedFallbackGuests
+      ? `${activeEventLabel} · Backup dataset active (forced fallback mode)`
+      : `${activeEventLabel} · No local backup dataset is configured for this archive`;
     return;
   }
 
@@ -6144,11 +6155,12 @@ async function initializeDataSource() {
     activeEventApiId = (payload && payload.event_api_id) || activeEventApiId;
     activeEventLabel = formatEventLabel((payload && payload.event_label) || EVENT_PARAM || activeEventApiId || EVENT_ID_PARAM);
     liveStatusMessage = `${activeEventLabel} · Live from Luma · ${guestNames.length} guests synced`;
-    setArchiveUnlocked();
   } catch (error) {
     const reason = error && error.message ? error.message : 'Live sync unavailable';
     activeDataSource = 'fallback';
-    liveStatusMessage = `${activeEventLabel} · Backup dataset active (${reason})`;
+    liveStatusMessage = hasScopedFallbackGuests
+      ? `${activeEventLabel} · Backup dataset active (${reason})`
+      : `${activeEventLabel} · Live sync unavailable (${reason})`;
   }
 }
 
@@ -6173,8 +6185,9 @@ function hashGradient(name) {
   return gradients[Math.abs(h) % gradients.length];
 }
 
-const ARCHIVE_PASSWORD = 'ctrlshift9';
-let archiveUnlocked = true;
+const ARCHIVE_PASSWORD = 'ctrlshift10';
+const ARCHIVE_PROTECTED_EVENT_KEYS = new Set(['vol9', 'vol10']);
+let archiveUnlocked = false;
 
 function isArchiveUnlocked() {
   return archiveUnlocked;
@@ -6182,6 +6195,10 @@ function isArchiveUnlocked() {
 
 function setArchiveUnlocked() {
   archiveUnlocked = true;
+}
+
+function requiresArchiveUnlock(eventKey = SELECTED_EVENT_KEY) {
+  return ARCHIVE_PROTECTED_EVENT_KEYS.has(normalizeKey(eventKey));
 }
 
 function getGuestByKey(key) {
@@ -6199,10 +6216,10 @@ function renderEventHub() {
   const staticEventCards = Object.keys(EVENT_REGISTRY).map((key) => {
     const eventConfig = EVENT_REGISTRY[key];
     const title = eventConfig.label || formatEventLabel(key);
-    const statusLabel = eventConfig.mode === 'fallback' ? '🔒 Archive' : 'Event';
+    const statusLabel = eventConfig.archived ? '🔒 Archive' : 'Event';
     const description =
-      eventConfig.mode === 'fallback'
-        ? 'Browse archived matches from previous CTRL SHIFT volumes.'
+      eventConfig.archived
+        ? 'Enter the archive password to browse saved matches from this volume.'
         : 'Open event matches.';
     const href = `?event=${encodeURIComponent(key)}`;
 
@@ -6219,15 +6236,15 @@ function renderEventHub() {
     <div class="header">
       <div class="header-label">CTRL SHIFT</div>
       <h1>Choose Your <span class="highlight">Event</span></h1>
-      <p class="subtitle">Open current matches or browse archives</p>
+      <p class="subtitle">Current event is closed. Archives are still available with password access.</p>
     </div>
     <div class="archive-shell">
       <div class="archive-grid">
-        <a class="status-card status-link vol10" href="?source=auto">
-          <div class="status-label">● Live</div>
-          <h3>Current Event</h3>
-          <p>Go to the active matchmaking page using live Luma sync.</p>
-        </a>
+        <div class="status-card">
+          <div class="status-label">○ Paused</div>
+          <h3>No Live Event</h3>
+          <p>Volume 10 has ended and been archived. New live matches will return when the next volume opens.</p>
+        </div>
         ${staticEventCards.join('')}
       </div>
     </div>
@@ -6237,7 +6254,7 @@ function renderEventHub() {
   `;
 }
 
-function routeVol9() {
+function routeMatches() {
   if (isRaffleRoute()) {
     renderRaffle();
     return;
@@ -6255,28 +6272,30 @@ function routeVol9() {
 }
 
 function renderArchiveGate() {
+  const selectedLabel = (selectedEventConfig && selectedEventConfig.label) || formatEventLabel(EVENT_PARAM || EVENT_API_ID_PARAM || EVENT_ID_PARAM) || 'Archive';
+
   app.innerHTML = `
     <div class="header">
       <div class="header-label">CTRL SHIFT</div>
-      <h1>Volume 10 <span class="highlight">Coming Soon</span></h1>
-      <p class="subtitle">Next edition in progress</p>
+      <h1>${selectedLabel} <span class="highlight">Archived</span></h1>
+      <p class="subtitle">Enter the archive password to view saved matches from this event.</p>
     </div>
     <div class="archive-shell">
       <div class="archive-grid">
-        <div class="status-card vol10">
-          <div class="status-label">● Active Slot</div>
-          <h3>CTRL SHIFT Vol. 10</h3>
-          <p>New matchmaking and guest updates will appear here when Vol. 10 goes live.</p>
-        </div>
         <div class="status-card">
           <div class="status-label">🔒 Archived</div>
-          <h3>CTRL SHIFT Vol. 9</h3>
-          <p>Vol. 9 is now archived. Enter the password to view the full matchmaking archive.</p>
+          <h3>CTRL SHIFT ${selectedLabel}</h3>
+          <p>This event has ended. Archive access is available for attendees with the password.</p>
           <form class="unlock-form" id="unlockForm">
             <input type="password" id="archivePassword" placeholder="Enter archive password" autocomplete="off" />
-            <button type="submit" class="unlock-btn">Open Vol. 9 Archive</button>
+            <button type="submit" class="unlock-btn">Open Archive</button>
             <div class="unlock-error" id="unlockError"></div>
           </form>
+        </div>
+        <div class="status-card">
+          <div class="status-label">○ Paused</div>
+          <h3>Live Matchmaking</h3>
+          <p>There is no active event right now. The next live volume will appear here when announced.</p>
         </div>
       </div>
     </div>
@@ -6293,7 +6312,9 @@ function renderArchiveGate() {
     e.preventDefault();
     if (input.value.trim() === ARCHIVE_PASSWORD) {
       setArchiveUnlocked();
-      routeVol9();
+      initializeDataSource().then(() => {
+        routeMatches();
+      });
       return;
     }
     error.textContent = 'Incorrect password. Try again.';
@@ -6500,7 +6521,7 @@ window.goBack = function() {
     renderEventHub();
     return;
   }
-  renderSearch();
+  routeMatches();
 };
 
 // Handle browser back/forward
@@ -6509,16 +6530,24 @@ window.addEventListener('popstate', () => {
     renderEventHub();
     return;
   }
-  routeVol9();
+  if (requiresArchiveUnlock() && !isArchiveUnlocked()) {
+    renderArchiveGate();
+    return;
+  }
+  routeMatches();
 });
 
 // Init
 if (shouldRenderEventHub()) {
   renderEventHub();
 } else {
-  initializeDataSource().then(() => {
-    routeVol9();
-  });
+  if (requiresArchiveUnlock() && !isArchiveUnlocked()) {
+    renderArchiveGate();
+  } else {
+    initializeDataSource().then(() => {
+      routeMatches();
+    });
+  }
 }
 </script>
 </body>
