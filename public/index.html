@@ -498,6 +498,13 @@ body {
     var(--surface);
 }
 
+.status-card.vol11 {
+  border-color: #3dff8e66;
+  background:
+    linear-gradient(180deg, rgba(61, 255, 142, 0.09) 0%, rgba(61, 255, 142, 0.02) 100%),
+    var(--surface);
+}
+
 .status-link {
   display: block;
   text-decoration: none;
@@ -6236,15 +6243,15 @@ function renderEventHub() {
     <div class="header">
       <div class="header-label">CTRL SHIFT</div>
       <h1>Choose Your <span class="highlight">Event</span></h1>
-      <p class="subtitle">Current event is closed. Archives are still available with password access.</p>
+      <p class="subtitle">Open current matches or browse archives</p>
     </div>
     <div class="archive-shell">
       <div class="archive-grid">
-        <div class="status-card">
-          <div class="status-label">○ Paused</div>
-          <h3>No Live Event</h3>
-          <p>Volume 10 has ended and been archived. New live matches will return when the next volume opens.</p>
-        </div>
+        <a class="status-card status-link vol11" href="?event=vol11">
+          <div class="status-label">● Live</div>
+          <h3>CTRL SHIFT Vol. 11</h3>
+          <p>Go to the active matchmaking page using live Luma sync.</p>
+        </a>
         ${staticEventCards.join('')}
       </div>
     </div>
@@ -6292,11 +6299,11 @@ function renderArchiveGate() {
             <div class="unlock-error" id="unlockError"></div>
           </form>
         </div>
-        <div class="status-card">
-          <div class="status-label">○ Paused</div>
-          <h3>Live Matchmaking</h3>
-          <p>There is no active event right now. The next live volume will appear here when announced.</p>
-        </div>
+        <a class="status-card status-link vol11" href="?event=vol11">
+          <div class="status-label">● Live</div>
+          <h3>CTRL SHIFT Vol. 11</h3>
+          <p>The current volume is live. Go to the active matchmaking page.</p>
+        </a>
       </div>
     </div>
     <div class="footer">
