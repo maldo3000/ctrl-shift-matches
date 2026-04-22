@@ -1,7 +1,9 @@
 const LUMA_API_BASE_URL = process.env.LUMA_API_BASE_URL || 'https://public-api.luma.com';
 const CACHE_TTL_SECONDS = Number(process.env.MATCH_CACHE_TTL_SECONDS || 120);
 const CALENDAR_TTL_SECONDS = Number(process.env.LUMA_CALENDAR_TTL_SECONDS || 300);
-const TITLE_FILTER_SOURCE = String(process.env.LUMA_EVENT_TITLE_FILTER || 'ctrl\\s*shift');
+// Match CTRL SHIFT, CTRL+SHIFT, CTRL-SHIFT, ctrlshift, etc. — any non-word character(s)
+// (including + / -) allowed between the two words.
+const TITLE_FILTER_SOURCE = String(process.env.LUMA_EVENT_TITLE_FILTER || 'ctrl[\\s+\\-_]*shift');
 let TITLE_FILTER;
 try {
   TITLE_FILTER = new RegExp(TITLE_FILTER_SOURCE, 'i');
