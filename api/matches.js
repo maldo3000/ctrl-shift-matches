@@ -1,9 +1,22 @@
 const LUMA_API_BASE_URL = process.env.LUMA_API_BASE_URL || 'https://public-api.luma.com';
 const CACHE_TTL_SECONDS = Number(process.env.MATCH_CACHE_TTL_SECONDS || 120);
+const CALENDAR_TTL_SECONDS = Number(process.env.LUMA_CALENDAR_TTL_SECONDS || 300);
+const TITLE_FILTER_SOURCE = String(process.env.LUMA_EVENT_TITLE_FILTER || 'ctrl\\s*shift');
+let TITLE_FILTER;
+try {
+  TITLE_FILTER = new RegExp(TITLE_FILTER_SOURCE, 'i');
+} catch (_error) {
+  TITLE_FILTER = /ctrl\s*shift/i;
+}
 
 const cache = {
   expiresAt: 0,
   key: '',
+  payload: null,
+};
+
+const calendarCache = {
+  expiresAt: 0,
   payload: null,
 };
 
@@ -125,27 +138,43 @@ function buildEventKey({ explicitEvent, eventLabel, fallbackId }) {
   return normalizeKey(fallbackId || 'live');
 }
 
-function resolveEventSelection(reqQuery) {
+function resolveEventSelection(reqQuery, discovered) {
   const query = reqQuery || {};
-  const eventMap = parseJsonObject(process.env.LUMA_EVENT_MAP);
-  const defaultEventKey = String(process.env.LUMA_DEFAULT_EVENT_KEY || '').trim();
+  const envMap = parseJsonObject(process.env.LUMA_EVENT_MAP);
+  const dynamicApiIdByKey = (discovered && discovered.apiIdByKey) || {};
+  // Env map entries override dynamic discovery
+  const eventMap = { ...dynamicApiIdByKey, ...envMap };
+  const envDefault = String(process.env.LUMA_DEFAULT_EVENT_KEY || '').trim();
+  const discoveredCurrent = (discovered && discovered.currentKey) || '';
+  const defaultEventKey = envDefault || discoveredCurrent;
 
   const explicitEvent = String(query.event || query.event_key || '').trim();
   const eventKey = normalizeKey(explicitEvent || defaultEventKey || '');
   const mappedEventApiId = eventKey && typeof eventMap[eventKey] === 'string' ? String(eventMap[eventKey]).trim() : '';
+  const queryEventApiId = String(query.event_api_id || query.eventApiId || '').trim();
+  const queryEventId = String(query.event_id || '').trim();
+
+  // If the caller asked for a specific event key we couldn't resolve, do NOT fall back
+  // to LUMA_EVENT_API_ID — that silently serves the wrong event.
+  const explicitKeyUnresolved = Boolean(explicitEvent) && !mappedEventApiId && !queryEventApiId && !queryEventId;
+
   const eventApiId =
-    String(query.event_api_id || query.eventApiId || '').trim() ||
+    queryEventApiId ||
     mappedEventApiId ||
-    String(process.env.LUMA_EVENT_API_ID || process.env.LUMA_EVENT_ID || '').trim();
-  const eventId = String(query.event_id || '').trim() || String(process.env.LUMA_EVENT_ID || '').trim();
+    (explicitEvent ? '' : String(process.env.LUMA_EVENT_API_ID || process.env.LUMA_EVENT_ID || '').trim());
+  const eventId =
+    queryEventId ||
+    (explicitEvent ? '' : String(process.env.LUMA_EVENT_ID || '').trim());
   const eventLabel = formatEventLabel(query.event_label || explicitEvent || eventKey || eventApiId);
 
   return {
     explicitEvent,
+    explicitKeyUnresolved,
     eventKey: eventKey || null,
     eventLabel,
     eventApiId,
     eventId,
+    availableKeys: Object.keys(eventMap),
   };
 }
 
@@ -650,6 +679,145 @@ async function fetchAllGuests({ apiKey, eventApiId, eventId, approvalStatus, pag
   return entries.map((entry) => entry.guest).filter(isGuestEligible);
 }
 
+async function fetchCalendarEvents({ apiKey, paginationLimit = 50 }) {
+  const events = [];
+  const seenCursors = new Set();
+  let cursor = null;
+
+  for (let page = 0; page < 10; page += 1) {
+    const params = new URLSearchParams();
+    params.set('pagination_limit', String(paginationLimit));
+    if (cursor) params.set('pagination_cursor', cursor);
+
+    const endpoint = `${LUMA_API_BASE_URL}/v1/calendar/list-events?${params.toString()}`;
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'x-luma-api-key': apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`Luma calendar list failed (${response.status}): ${body.slice(0, 300)}`);
+    }
+
+    const payload = await response.json();
+    const pageEntries = Array.isArray(payload.entries) ? payload.entries : [];
+    pageEntries.forEach((entry) => {
+      if (entry && entry.event) events.push(entry.event);
+    });
+
+    if (!payload.has_more || !payload.next_cursor) break;
+    if (seenCursors.has(payload.next_cursor)) break;
+
+    seenCursors.add(payload.next_cursor);
+    cursor = payload.next_cursor;
+  }
+
+  return events;
+}
+
+function buildDynamicMaps(events, titleFilter = TITLE_FILTER) {
+  const apiIdByKey = {};
+  const metaByKey = {};
+
+  events.forEach((ev) => {
+    if (!ev || typeof ev !== 'object') return;
+    const title = String(ev.name || ev.title || '');
+    if (!title || !titleFilter.test(title)) return;
+
+    const vol = extractVolumeNumber(title);
+    if (!vol) return;
+
+    const key = `vol${vol}`;
+    const apiId = String(ev.api_id || '');
+    if (!apiId) return;
+
+    const existing = metaByKey[key];
+    const existingStart = existing ? Date.parse(existing.start_at || '') : NaN;
+    const newStart = Date.parse(ev.start_at || '');
+
+    if (
+      !existing ||
+      (Number.isFinite(newStart) && (!Number.isFinite(existingStart) || newStart > existingStart))
+    ) {
+      apiIdByKey[key] = apiId;
+      metaByKey[key] = {
+        api_id: apiId,
+        start_at: ev.start_at || null,
+        name: title,
+        label: formatEventLabel(title),
+      };
+    }
+  });
+
+  return { apiIdByKey, metaByKey };
+}
+
+function pickCurrentEventKey(metaByKey, nowMs = Date.now()) {
+  let soonestFuture = null;
+  let mostRecentPast = null;
+
+  Object.entries(metaByKey || {}).forEach(([key, meta]) => {
+    const ts = Date.parse((meta && meta.start_at) || '');
+    if (!Number.isFinite(ts)) return;
+
+    if (ts >= nowMs) {
+      if (!soonestFuture || ts < soonestFuture.ts) soonestFuture = { key, ts };
+    } else if (!mostRecentPast || ts > mostRecentPast.ts) {
+      mostRecentPast = { key, ts };
+    }
+  });
+
+  return (soonestFuture || mostRecentPast || {}).key || null;
+}
+
+async function getDiscoveredEvents({ apiKey, force = false }) {
+  const now = Date.now();
+
+  if (!force && calendarCache.payload && now < calendarCache.expiresAt) {
+    return calendarCache.payload;
+  }
+
+  if (!apiKey) {
+    return { events: [], apiIdByKey: {}, metaByKey: {}, currentKey: null, error: 'missing_api_key' };
+  }
+
+  try {
+    const events = await fetchCalendarEvents({ apiKey });
+    const { apiIdByKey, metaByKey } = buildDynamicMaps(events);
+    const currentKey = pickCurrentEventKey(metaByKey, now);
+
+    const payload = {
+      events,
+      apiIdByKey,
+      metaByKey,
+      currentKey,
+      fetchedAt: now,
+      error: null,
+    };
+
+    calendarCache.payload = payload;
+    calendarCache.expiresAt = now + CALENDAR_TTL_SECONDS * 1000;
+    return payload;
+  } catch (error) {
+    // Fail soft — env-var map remains authoritative if discovery is down.
+    const payload = {
+      events: [],
+      apiIdByKey: {},
+      metaByKey: {},
+      currentKey: null,
+      fetchedAt: now,
+      error: error && error.message ? error.message : 'discovery_failed',
+    };
+    calendarCache.payload = payload;
+    calendarCache.expiresAt = now + 30 * 1000; // shorter TTL on failure
+    return payload;
+  }
+}
+
 async function fetchEventDetails({ apiKey, eventApiId, eventId }) {
   const fetchOne = async (idValue) => {
     if (!idValue) return null;
@@ -729,7 +897,11 @@ module.exports = async function handler(req, res) {
 
   const query = req.query || {};
   const mode = normalizeText(query.mode) || 'auto';
-  const eventSelection = resolveEventSelection(query);
+  const apiKey = process.env.LUMA_API_KEY;
+
+  // Auto-discover events from Luma calendar (cached). Safe to await even without API key.
+  const discovered = await getDiscoveredEvents({ apiKey });
+  const eventSelection = resolveEventSelection(query, discovered);
 
   if (mode === 'fallback') {
     return res.status(200).json({
@@ -743,7 +915,6 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const apiKey = process.env.LUMA_API_KEY;
   const eventApiId = eventSelection.eventApiId;
   const eventId = eventSelection.eventId;
   const approvalStatus = query.approval_status || process.env.LUMA_GUEST_APPROVAL_STATUS || 'approved';
@@ -756,6 +927,18 @@ module.exports = async function handler(req, res) {
       event_api_id: eventApiId || null,
       event_id: eventId || null,
       error: 'Missing LUMA_API_KEY environment variable.',
+    });
+  }
+
+  // Fix for the silent-fallback trap: if the caller asked for a specific event key
+  // (e.g. ?event=vol11) and we can't resolve it via LUMA_EVENT_MAP or calendar discovery,
+  // return a clear error instead of serving the wrong event via LUMA_EVENT_API_ID.
+  if (eventSelection.explicitKeyUnresolved) {
+    return res.status(404).json({
+      source: 'live',
+      event_key: eventSelection.eventKey,
+      event_label: eventSelection.eventLabel,
+      error: `Unknown event "${eventSelection.explicitEvent}". Known keys: ${eventSelection.availableKeys.join(', ') || '(none)'}. Add the event to LUMA_EVENT_MAP or ensure the Luma event title contains "Vol. N" so it is auto-discovered.`,
     });
   }
 
@@ -803,3 +986,9 @@ module.exports = async function handler(req, res) {
     });
   }
 };
+
+// Expose discovery helpers for the /api/events handler to reuse the same cache.
+module.exports.getDiscoveredEvents = getDiscoveredEvents;
+module.exports.pickCurrentEventKey = pickCurrentEventKey;
+module.exports.buildDynamicMaps = buildDynamicMaps;
+module.exports.fetchCalendarEvents = fetchCalendarEvents;

@@ -6219,8 +6219,8 @@ function shouldRenderEventHub() {
   return !directParams.some((param) => p.has(param));
 }
 
-function renderEventHub() {
-  const staticEventCards = Object.keys(EVENT_REGISTRY).map((key) => {
+function buildArchiveCards() {
+  return Object.keys(EVENT_REGISTRY).map((key) => {
     const eventConfig = EVENT_REGISTRY[key];
     const title = eventConfig.label || formatEventLabel(key);
     const statusLabel = eventConfig.archived ? '🔒 Archive' : 'Event';
@@ -6237,8 +6237,30 @@ function renderEventHub() {
         <p>${description}</p>
       </a>
     `;
-  });
+  }).join('');
+}
 
+function buildLiveCard(currentEvent) {
+  if (!currentEvent || !currentEvent.key) {
+    return `
+      <div class="status-card">
+        <div class="status-label">○ Paused</div>
+        <h3>No Live Event</h3>
+        <p>No active volume found on Luma right now. When a new volume is scheduled, it'll show up here automatically.</p>
+      </div>
+    `;
+  }
+  const label = currentEvent.label || formatEventLabel(currentEvent.key);
+  return `
+    <a class="status-card status-link vol11" href="?event=${encodeURIComponent(currentEvent.key)}">
+      <div class="status-label">● Live</div>
+      <h3>CTRL SHIFT ${label}</h3>
+      <p>Go to the active matchmaking page using live Luma sync.</p>
+    </a>
+  `;
+}
+
+function renderEventHubShell(liveCardHtml) {
   app.innerHTML = `
     <div class="header">
       <div class="header-label">CTRL SHIFT</div>
@@ -6246,19 +6268,42 @@ function renderEventHub() {
       <p class="subtitle">Open current matches or browse archives</p>
     </div>
     <div class="archive-shell">
-      <div class="archive-grid">
-        <a class="status-card status-link vol11" href="?event=vol11">
-          <div class="status-label">● Live</div>
-          <h3>CTRL SHIFT Vol. 11</h3>
-          <p>Go to the active matchmaking page using live Luma sync.</p>
-        </a>
-        ${staticEventCards.join('')}
+      <div class="archive-grid" id="eventGrid">
+        ${liveCardHtml}
+        ${buildArchiveCards()}
       </div>
     </div>
     <div class="footer">
       Built with ☕ for the CTRL SHIFT community
     </div>
   `;
+}
+
+async function renderEventHub() {
+  // Render a loading skeleton first so archive cards are visible instantly.
+  renderEventHubShell(`
+    <div class="status-card">
+      <div class="status-label">◌ Syncing</div>
+      <h3>Checking for live event…</h3>
+      <p>Pulling the latest volume from Luma.</p>
+    </div>
+  `);
+
+  let currentEvent = null;
+  try {
+    const resp = await fetch('/api/events', { cache: 'no-store' });
+    if (resp.ok) {
+      const payload = await resp.json();
+      const currentKey = payload && payload.current_event_key;
+      if (currentKey && Array.isArray(payload.events)) {
+        currentEvent = payload.events.find((ev) => ev && ev.key === currentKey) || { key: currentKey };
+      }
+    }
+  } catch (_error) {
+    // Fail soft — we'll fall back to the "No Live Event" card below.
+  }
+
+  renderEventHubShell(buildLiveCard(currentEvent));
 }
 
 function routeMatches() {
@@ -6339,7 +6384,7 @@ function renderSearch() {
     </div>
     <div class="search-section">
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Type your name to find matches..." autocomplete="off" autofocus />
+        <input type="search" id="searchInput" name="guestName" placeholder="Type your name to find matches..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other" autofocus />
       </div>
       <div id="searchResults"></div>
     </div>
