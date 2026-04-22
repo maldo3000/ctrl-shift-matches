@@ -826,6 +826,11 @@ async function getDiscoveredEvents({ apiKey, force = false }) {
       pagesFetched,
       sawHasMore,
       calendarApiId: calendarApiId || null,
+      rawTitles: events.map((ev) => ({
+        name: (ev && (ev.name || ev.title)) || '',
+        api_id: (ev && ev.api_id) || '',
+        start_at: (ev && ev.start_at) || null,
+      })),
       error: null,
     };
 

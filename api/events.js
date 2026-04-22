@@ -80,6 +80,7 @@ module.exports = async function handler(req, res) {
       saw_has_more: Boolean(discovered.sawHasMore),
       calendar_api_id: discovered.calendarApiId || null,
       env_map_keys: Object.keys(envMap),
+      raw_titles: discovered.rawTitles || [],
     },
   });
 };
