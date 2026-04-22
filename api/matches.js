@@ -763,6 +763,7 @@ function buildDynamicMaps(events, titleFilter = TITLE_FILTER) {
       metaByKey[key] = {
         api_id: apiId,
         start_at: ev.start_at || null,
+        end_at: ev.end_at || null,
         name: title,
         label: formatEventLabel(title),
       };
@@ -772,22 +773,39 @@ function buildDynamicMaps(events, titleFilter = TITLE_FILTER) {
   return { apiIdByKey, metaByKey };
 }
 
+// Default in-progress window used when a Luma event has no `end_at` on the
+// calendar response. Keeps `/` and `/raffle` pinned to the current event for
+// the duration of a typical meetup rather than flipping to the next volume
+// the moment `start_at` passes.
+const DEFAULT_EVENT_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours
+
 function pickCurrentEventKey(metaByKey, nowMs = Date.now()) {
+  let inProgress = null;
   let soonestFuture = null;
   let mostRecentPast = null;
 
   Object.entries(metaByKey || {}).forEach(([key, meta]) => {
-    const ts = Date.parse((meta && meta.start_at) || '');
-    if (!Number.isFinite(ts)) return;
+    const startTs = Date.parse((meta && meta.start_at) || '');
+    if (!Number.isFinite(startTs)) return;
 
-    if (ts >= nowMs) {
-      if (!soonestFuture || ts < soonestFuture.ts) soonestFuture = { key, ts };
-    } else if (!mostRecentPast || ts > mostRecentPast.ts) {
-      mostRecentPast = { key, ts };
+    const endCandidate = Date.parse((meta && meta.end_at) || '');
+    const endTs = Number.isFinite(endCandidate) ? endCandidate : startTs + DEFAULT_EVENT_DURATION_MS;
+
+    // Prefer an event that is currently underway. If multiple overlap
+    // (shouldn't happen in practice), take the one that started most recently.
+    if (startTs <= nowMs && nowMs <= endTs) {
+      if (!inProgress || startTs > inProgress.startTs) inProgress = { key, startTs };
+      return;
+    }
+
+    if (startTs >= nowMs) {
+      if (!soonestFuture || startTs < soonestFuture.ts) soonestFuture = { key, ts: startTs };
+    } else if (!mostRecentPast || startTs > mostRecentPast.ts) {
+      mostRecentPast = { key, ts: startTs };
     }
   });
 
-  return (soonestFuture || mostRecentPast || {}).key || null;
+  return (inProgress || soonestFuture || mostRecentPast || {}).key || null;
 }
 
 async function getDiscoveredEvents({ apiKey, force = false }) {
