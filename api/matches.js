@@ -684,9 +684,17 @@ async function fetchCalendarEvents({ apiKey, paginationLimit = 50 }) {
   const seenCursors = new Set();
   let cursor = null;
 
+  // Luma's list-events defaults to a narrow window on some API versions, so we
+  // explicitly request a wide time range (far past → far future) to capture
+  // every event on the calendar.
+  const AFTER_EPOCH = '2000-01-01T00:00:00.000Z';
+  const BEFORE_EPOCH = '2100-01-01T00:00:00.000Z';
+
   for (let page = 0; page < 10; page += 1) {
     const params = new URLSearchParams();
     params.set('pagination_limit', String(paginationLimit));
+    params.set('after', AFTER_EPOCH);
+    params.set('before', BEFORE_EPOCH);
     if (cursor) params.set('pagination_cursor', cursor);
 
     const endpoint = `${LUMA_API_BASE_URL}/v1/calendar/list-events?${params.toString()}`;
