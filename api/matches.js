@@ -679,10 +679,12 @@ async function fetchAllGuests({ apiKey, eventApiId, eventId, approvalStatus, pag
   return entries.map((entry) => entry.guest).filter(isGuestEligible);
 }
 
-async function fetchCalendarEvents({ apiKey, paginationLimit = 50 }) {
+async function fetchCalendarEvents({ apiKey, calendarApiId = '', paginationLimit = 50 }) {
   const events = [];
   const seenCursors = new Set();
   let cursor = null;
+  let pagesFetched = 0;
+  let sawHasMore = false;
 
   // Luma's list-events defaults to a narrow window on some API versions, so we
   // explicitly request a wide time range (far past → far future) to capture
@@ -690,11 +692,12 @@ async function fetchCalendarEvents({ apiKey, paginationLimit = 50 }) {
   const AFTER_EPOCH = '2000-01-01T00:00:00.000Z';
   const BEFORE_EPOCH = '2100-01-01T00:00:00.000Z';
 
-  for (let page = 0; page < 10; page += 1) {
+  for (let page = 0; page < 20; page += 1) {
     const params = new URLSearchParams();
     params.set('pagination_limit', String(paginationLimit));
     params.set('after', AFTER_EPOCH);
     params.set('before', BEFORE_EPOCH);
+    if (calendarApiId) params.set('calendar_api_id', calendarApiId);
     if (cursor) params.set('pagination_cursor', cursor);
 
     const endpoint = `${LUMA_API_BASE_URL}/v1/calendar/list-events?${params.toString()}`;
@@ -717,6 +720,9 @@ async function fetchCalendarEvents({ apiKey, paginationLimit = 50 }) {
       if (entry && entry.event) events.push(entry.event);
     });
 
+    pagesFetched += 1;
+    sawHasMore = sawHasMore || Boolean(payload.has_more);
+
     if (!payload.has_more || !payload.next_cursor) break;
     if (seenCursors.has(payload.next_cursor)) break;
 
@@ -724,7 +730,7 @@ async function fetchCalendarEvents({ apiKey, paginationLimit = 50 }) {
     cursor = payload.next_cursor;
   }
 
-  return events;
+  return { events, pagesFetched, sawHasMore };
 }
 
 function buildDynamicMaps(events, titleFilter = TITLE_FILTER) {
@@ -790,11 +796,23 @@ async function getDiscoveredEvents({ apiKey, force = false }) {
   }
 
   if (!apiKey) {
-    return { events: [], apiIdByKey: {}, metaByKey: {}, currentKey: null, error: 'missing_api_key' };
+    return {
+      events: [],
+      apiIdByKey: {},
+      metaByKey: {},
+      currentKey: null,
+      rawCount: 0,
+      pagesFetched: 0,
+      sawHasMore: false,
+      calendarApiId: null,
+      error: 'missing_api_key',
+    };
   }
 
+  const calendarApiId = String(process.env.LUMA_CALENDAR_API_ID || '').trim();
+
   try {
-    const events = await fetchCalendarEvents({ apiKey });
+    const { events, pagesFetched, sawHasMore } = await fetchCalendarEvents({ apiKey, calendarApiId });
     const { apiIdByKey, metaByKey } = buildDynamicMaps(events);
     const currentKey = pickCurrentEventKey(metaByKey, now);
 
@@ -804,6 +822,10 @@ async function getDiscoveredEvents({ apiKey, force = false }) {
       metaByKey,
       currentKey,
       fetchedAt: now,
+      rawCount: events.length,
+      pagesFetched,
+      sawHasMore,
+      calendarApiId: calendarApiId || null,
       error: null,
     };
 
@@ -818,6 +840,10 @@ async function getDiscoveredEvents({ apiKey, force = false }) {
       metaByKey: {},
       currentKey: null,
       fetchedAt: now,
+      rawCount: 0,
+      pagesFetched: 0,
+      sawHasMore: false,
+      calendarApiId: calendarApiId || null,
       error: error && error.message ? error.message : 'discovery_failed',
     };
     calendarCache.payload = payload;

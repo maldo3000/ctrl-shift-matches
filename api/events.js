@@ -74,5 +74,12 @@ module.exports = async function handler(req, res) {
     events,
     fetched_at: new Date(discovered.fetchedAt || now).toISOString(),
     error: discovered.error || null,
+    debug: {
+      raw_event_count: discovered.rawCount || 0,
+      pages_fetched: discovered.pagesFetched || 0,
+      saw_has_more: Boolean(discovered.sawHasMore),
+      calendar_api_id: discovered.calendarApiId || null,
+      env_map_keys: Object.keys(envMap),
+    },
   });
 };
