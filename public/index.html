@@ -6359,22 +6359,30 @@ const rawclawState = {
 function applyServerState(payload) {
   if (!payload || typeof payload !== 'object') return false;
   if (payload.error) {
+    const wasLoaded = rawclawState.loaded;
     rawclawState.loaded = true;
     rawclawState.bannerMessage = payload.error === 'persistence-not-configured'
       ? 'Shared storage is not connected yet — names will not sync across devices until a Vercel KV database is linked to the project.'
       : (payload.message || `Sync error: ${payload.error}`);
-    return false;
+    return !wasLoaded;
   }
   const incomingUpdated = Number.isFinite(payload.updatedAt) ? payload.updatedAt : 0;
-  if (rawclawState.loaded && incomingUpdated && incomingUpdated === rawclawState.updatedAt) {
+  const incomingNames = Array.isArray(payload.names) ? payload.names.filter((n) => typeof n === 'string') : [];
+  const incomingWinners = Array.isArray(payload.winners) ? payload.winners.filter((k) => typeof k === 'string') : [];
+  const incomingHistory = Array.isArray(payload.history) ? payload.history.filter((n) => typeof n === 'string') : [];
+  const incomingLastWinner = typeof payload.lastWinner === 'string' ? payload.lastWinner : '';
+  const incomingSig = JSON.stringify([incomingNames, incomingWinners, incomingHistory, incomingLastWinner]);
+  if (rawclawState.loaded && incomingSig === rawclawState._sig) {
+    rawclawState.updatedAt = incomingUpdated;
     return false;
   }
   const prevLastWinner = rawclawState.lastWinner;
-  rawclawState.names = Array.isArray(payload.names) ? payload.names.filter((n) => typeof n === 'string') : [];
-  rawclawState.excludedWinners = new Set(Array.isArray(payload.winners) ? payload.winners.filter((k) => typeof k === 'string') : []);
-  rawclawState.winnerHistory = Array.isArray(payload.history) ? payload.history.filter((n) => typeof n === 'string') : [];
-  rawclawState.lastWinner = typeof payload.lastWinner === 'string' ? payload.lastWinner : '';
+  rawclawState.names = incomingNames;
+  rawclawState.excludedWinners = new Set(incomingWinners);
+  rawclawState.winnerHistory = incomingHistory;
+  rawclawState.lastWinner = incomingLastWinner;
   rawclawState.updatedAt = incomingUpdated;
+  rawclawState._sig = incomingSig;
   rawclawState.loaded = true;
   rawclawState.bannerMessage = '';
   if (
@@ -6610,6 +6618,10 @@ function renderRawClawRaffle(options = {}) {
     syncRawClawFromServer().finally(() => { rawclawState.pending = false; });
     startRawClawPolling();
   }
+  const existingInput = document.getElementById('rawclawNameInput');
+  if (existingInput) {
+    rawclawState.draftName = existingInput.value;
+  }
   const nameCount = rawclawState.names.length;
   const remainingCount = getRawClawPool().length;
   const activeTab = rawclawState.activeTab;
@@ -6636,7 +6648,7 @@ function renderRawClawRaffle(options = {}) {
   const namesTabHtml = `
     <div class="rawclaw-panel">
       <form class="rawclaw-add-form" id="rawclawAddForm" autocomplete="off">
-        <input type="text" id="rawclawNameInput" placeholder="Participant name" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" data-1p-ignore data-lpignore="true" />
+        <input type="text" id="rawclawNameInput" placeholder="Participant name" value="${escapeHtml(rawclawState.draftName || '')}" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" data-1p-ignore data-lpignore="true" />
         <button type="submit" class="raffle-btn primary">Add</button>
       </form>
       <div class="rawclaw-add-status" id="rawclawAddStatus">${escapeHtml(rawclawState.addStatusMessage || '')}</div>
@@ -6721,6 +6733,7 @@ function renderRawClawRaffle(options = {}) {
     const input = document.getElementById('rawclawNameInput');
     const statusEl = document.getElementById('rawclawAddStatus');
     if (form && input) {
+      input.addEventListener('input', () => { rawclawState.draftName = input.value; });
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const value = input.value;
@@ -6734,6 +6747,7 @@ function renderRawClawRaffle(options = {}) {
           input.select();
           return;
         }
+        rawclawState.draftName = '';
         input.value = '';
         renderRawClawRaffle();
         const nextInput = document.getElementById('rawclawNameInput');
