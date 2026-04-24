@@ -798,6 +798,24 @@ body {
 }
 
 /* RawClaw raffle */
+.rawclaw-banner {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #ff8e3d55;
+  background: rgba(255, 142, 61, 0.08);
+  color: #ffbf8e;
+  margin-bottom: 14px;
+}
+
+.rawclaw-banner.subtle {
+  border-color: var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+}
+
 .rawclaw-tabs {
   display: flex;
   gap: 6px;
@@ -6316,64 +6334,104 @@ function renderRaffle() {
 // ============================================================
 // RAWCLAW RAFFLE — standalone raffle for events with no Luma data
 // ============================================================
-const RAWCLAW_STORAGE_KEY_NAMES = 'rawclaw_raffle_names_v1';
-const RAWCLAW_STORAGE_KEY_WINNERS = 'rawclaw_raffle_winners_v1';
+const RAWCLAW_API_ENDPOINT = '/api/rawclaw';
+const RAWCLAW_POLL_INTERVAL_MS = 3000;
 
 const rawclawState = {
   activeTab: 'names',
   names: [],
-  spinning: false,
-  displayedName: '',
-  lastWinner: '',
-  statusMessage: '',
-  addStatusMessage: '',
   excludedWinners: new Set(),
   winnerHistory: [],
+  lastWinner: '',
+  updatedAt: 0,
+  spinning: false,
+  displayedName: '',
+  statusMessage: '',
+  addStatusMessage: '',
+  bannerMessage: '',
+  loaded: false,
+  pending: false,
+  pollTimerId: null,
   spinTimerId: null,
   confettiTimerId: null,
-  hydrated: false,
 };
 
-function loadRawClawState() {
-  if (rawclawState.hydrated) return;
-  rawclawState.hydrated = true;
-  try {
-    const raw = localStorage.getItem(RAWCLAW_STORAGE_KEY_NAMES);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        rawclawState.names = parsed.filter((n) => typeof n === 'string' && n.trim());
-      }
-    }
-  } catch (_) {}
-  try {
-    const raw = localStorage.getItem(RAWCLAW_STORAGE_KEY_WINNERS);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && Array.isArray(parsed.winners)) {
-        parsed.winners.forEach((k) => { if (typeof k === 'string') rawclawState.excludedWinners.add(k); });
-      }
-      if (parsed && Array.isArray(parsed.history)) {
-        rawclawState.winnerHistory = parsed.history.filter((n) => typeof n === 'string');
-        if (rawclawState.winnerHistory[0]) rawclawState.lastWinner = rawclawState.winnerHistory[0];
-      }
-    }
-  } catch (_) {}
+function applyServerState(payload) {
+  if (!payload || typeof payload !== 'object') return false;
+  if (payload.error) {
+    rawclawState.loaded = true;
+    rawclawState.bannerMessage = payload.error === 'persistence-not-configured'
+      ? 'Shared storage is not connected yet — names will not sync across devices until a Vercel KV database is linked to the project.'
+      : (payload.message || `Sync error: ${payload.error}`);
+    return false;
+  }
+  const incomingUpdated = Number.isFinite(payload.updatedAt) ? payload.updatedAt : 0;
+  if (rawclawState.loaded && incomingUpdated && incomingUpdated === rawclawState.updatedAt) {
+    return false;
+  }
+  const prevLastWinner = rawclawState.lastWinner;
+  rawclawState.names = Array.isArray(payload.names) ? payload.names.filter((n) => typeof n === 'string') : [];
+  rawclawState.excludedWinners = new Set(Array.isArray(payload.winners) ? payload.winners.filter((k) => typeof k === 'string') : []);
+  rawclawState.winnerHistory = Array.isArray(payload.history) ? payload.history.filter((n) => typeof n === 'string') : [];
+  rawclawState.lastWinner = typeof payload.lastWinner === 'string' ? payload.lastWinner : '';
+  rawclawState.updatedAt = incomingUpdated;
+  rawclawState.loaded = true;
+  rawclawState.bannerMessage = '';
+  if (
+    !rawclawState.spinning &&
+    rawclawState.lastWinner &&
+    prevLastWinner !== rawclawState.lastWinner
+  ) {
+    rawclawState.displayedName = rawclawState.lastWinner;
+    rawclawState.statusMessage = `${rawclawState.lastWinner} wins this round.`;
+  }
+  return true;
 }
 
-function saveRawClawNames() {
+async function rawclawFetch(method, body) {
+  const options = { method, headers: { 'Content-Type': 'application/json' }, cache: 'no-store' };
+  if (body) options.body = JSON.stringify(body);
+  let resp;
   try {
-    localStorage.setItem(RAWCLAW_STORAGE_KEY_NAMES, JSON.stringify(rawclawState.names));
-  } catch (_) {}
+    resp = await fetch(RAWCLAW_API_ENDPOINT, options);
+  } catch (err) {
+    return { error: 'network-error', message: 'Unable to reach the server. Check your connection.' };
+  }
+  let payload = null;
+  try { payload = await resp.json(); } catch (_) { payload = null; }
+  if (!resp.ok) {
+    return payload && payload.error
+      ? payload
+      : { error: `http-${resp.status}`, message: `Server error (${resp.status}).` };
+  }
+  return payload || {};
 }
 
-function saveRawClawWinners() {
-  try {
-    localStorage.setItem(RAWCLAW_STORAGE_KEY_WINNERS, JSON.stringify({
-      winners: Array.from(rawclawState.excludedWinners),
-      history: rawclawState.winnerHistory,
-    }));
-  } catch (_) {}
+async function syncRawClawFromServer() {
+  const payload = await rawclawFetch('GET');
+  const changed = applyServerState(payload);
+  if (changed || payload.error) {
+    renderRawClawRaffle({ skipInputRefocus: true });
+  }
+}
+
+function startRawClawPolling() {
+  stopRawClawPolling();
+  rawclawState.pollTimerId = window.setInterval(() => {
+    if (document.hidden) return;
+    if (!isRawClawRaffleRoute()) {
+      stopRawClawPolling();
+      return;
+    }
+    syncRawClawFromServer();
+  }, RAWCLAW_POLL_INTERVAL_MS);
+}
+
+function stopRawClawPolling() {
+  if (rawclawState.pollTimerId) {
+    window.clearInterval(rawclawState.pollTimerId);
+    rawclawState.pollTimerId = null;
+  }
 }
 
 function getRawClawPool() {
@@ -6392,44 +6450,39 @@ function clearRawClawTimers() {
   stopRaffleDrumRoll();
 }
 
-function addRawClawName(raw) {
+async function addRawClawName(raw) {
   const name = String(raw || '').trim().replace(/\s+/g, ' ');
   if (!name) return { ok: false, reason: 'Enter a name first.' };
-  const key = normalizeKey(name);
-  if (!key) return { ok: false, reason: 'Enter a valid name.' };
-  if (rawclawState.names.some((n) => normalizeKey(n) === key)) {
-    return { ok: false, reason: `${name} is already in the list.` };
+  const payload = await rawclawFetch('POST', { action: 'add', name });
+  if (payload.error) {
+    return { ok: false, reason: payload.message || `Could not add name (${payload.error}).` };
   }
-  rawclawState.names.push(name);
-  saveRawClawNames();
+  applyServerState(payload);
   return { ok: true };
 }
 
-function removeRawClawName(key) {
+async function removeRawClawName(key) {
   const normalized = normalizeKey(key);
   if (!normalized) return;
-  rawclawState.names = rawclawState.names.filter((n) => normalizeKey(n) !== normalized);
-  rawclawState.excludedWinners.delete(normalized);
-  rawclawState.winnerHistory = rawclawState.winnerHistory.filter((n) => normalizeKey(n) !== normalized);
-  if (rawclawState.lastWinner && normalizeKey(rawclawState.lastWinner) === normalized) {
-    rawclawState.lastWinner = '';
-    rawclawState.displayedName = '';
+  const payload = await rawclawFetch('POST', { action: 'remove', key: normalized });
+  if (payload.error) {
+    rawclawState.bannerMessage = payload.message || `Could not remove (${payload.error}).`;
+  } else {
+    applyServerState(payload);
   }
-  saveRawClawNames();
-  saveRawClawWinners();
 }
 
-function clearAllRawClawNames() {
+async function clearAllRawClawNames() {
   clearRawClawTimers();
   rawclawState.spinning = false;
-  rawclawState.names = [];
-  rawclawState.excludedWinners.clear();
-  rawclawState.winnerHistory = [];
-  rawclawState.lastWinner = '';
   rawclawState.displayedName = '';
   rawclawState.statusMessage = '';
-  saveRawClawNames();
-  saveRawClawWinners();
+  const payload = await rawclawFetch('POST', { action: 'clear' });
+  if (payload.error) {
+    rawclawState.bannerMessage = payload.message || `Could not clear (${payload.error}).`;
+  } else {
+    applyServerState(payload);
+  }
 }
 
 function setRawClawTab(tab) {
@@ -6466,7 +6519,7 @@ function launchRawClawConfetti() {
   }, 1800);
 }
 
-function finalizeRawClawSpin(winnerName) {
+async function finalizeRawClawSpin(winnerName) {
   stopRaffleDrumRoll();
   const winner = String(winnerName || '').trim();
   rawclawState.spinning = false;
@@ -6476,9 +6529,13 @@ function finalizeRawClawSpin(winnerName) {
     : 'Unable to select a winner.';
   if (winner) {
     rawclawState.excludedWinners.add(normalizeKey(winner));
-    rawclawState.winnerHistory.unshift(winner);
-    rawclawState.winnerHistory = rawclawState.winnerHistory.slice(0, RAFFLE_HISTORY_LIMIT);
-    saveRawClawWinners();
+    rawclawState.winnerHistory = [winner, ...rawclawState.winnerHistory.filter((n) => normalizeKey(n) !== normalizeKey(winner))].slice(0, RAFFLE_HISTORY_LIMIT);
+    const payload = await rawclawFetch('POST', { action: 'recordWinner', winner });
+    if (payload.error) {
+      rawclawState.bannerMessage = payload.message || `Winner not saved (${payload.error}).`;
+    } else {
+      applyServerState(payload);
+    }
   }
   renderRawClawRaffle();
   launchRawClawConfetti();
@@ -6527,25 +6584,32 @@ async function startRawClawSpin() {
   renderRawClawRaffle();
 }
 
-function resetRawClawPool() {
+async function resetRawClawPool() {
   clearRawClawTimers();
   rawclawState.spinning = false;
-  rawclawState.excludedWinners.clear();
-  rawclawState.winnerHistory = [];
-  rawclawState.lastWinner = '';
   rawclawState.displayedName = '';
   rawclawState.statusMessage = 'Winner pool reset. Ready for a new round.';
-  saveRawClawWinners();
+  const payload = await rawclawFetch('POST', { action: 'resetWinners' });
+  if (payload.error) {
+    rawclawState.bannerMessage = payload.message || `Could not reset (${payload.error}).`;
+  } else {
+    applyServerState(payload);
+  }
   renderRawClawRaffle();
 }
 
 function closeRawClawRaffle() {
   clearRawClawTimers();
+  stopRawClawPolling();
   window.location.assign('/');
 }
 
-function renderRawClawRaffle() {
-  loadRawClawState();
+function renderRawClawRaffle(options = {}) {
+  if (!rawclawState.loaded && !rawclawState.pending) {
+    rawclawState.pending = true;
+    syncRawClawFromServer().finally(() => { rawclawState.pending = false; });
+    startRawClawPolling();
+  }
   const nameCount = rawclawState.names.length;
   const remainingCount = getRawClawPool().length;
   const activeTab = rawclawState.activeTab;
@@ -6633,6 +6697,8 @@ function renderRawClawRaffle() {
     </div>
     <div class="raffle-shell">
       <button class="back-btn" onclick="closeRawClawRaffleRoute()">← Back</button>
+      ${rawclawState.bannerMessage ? `<div class="rawclaw-banner">${escapeHtml(rawclawState.bannerMessage)}</div>` : ''}
+      ${!rawclawState.loaded ? '<div class="rawclaw-banner subtle">Syncing with shared list…</div>' : ''}
       <div class="rawclaw-tabs" role="tablist">
         <button type="button" role="tab" aria-selected="${activeTab === 'names'}" class="rawclaw-tab${activeTab === 'names' ? ' active' : ''}" data-tab="names">Participants</button>
         <button type="button" role="tab" aria-selected="${activeTab === 'raffle'}" class="rawclaw-tab${activeTab === 'raffle' ? ' active' : ''}" data-tab="raffle">Raffle</button>
@@ -6655,9 +6721,13 @@ function renderRawClawRaffle() {
     const input = document.getElementById('rawclawNameInput');
     const statusEl = document.getElementById('rawclawAddStatus');
     if (form && input) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const res = addRawClawName(input.value);
+        const value = input.value;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+        const res = await addRawClawName(value);
+        if (submitBtn) submitBtn.disabled = false;
         if (!res.ok) {
           if (statusEl) statusEl.textContent = res.reason;
           input.focus();
@@ -6669,20 +6739,22 @@ function renderRawClawRaffle() {
         const nextInput = document.getElementById('rawclawNameInput');
         if (nextInput) nextInput.focus();
       });
-      setTimeout(() => input.focus(), 0);
+      if (!options.skipInputRefocus) setTimeout(() => input.focus(), 0);
     }
     document.querySelectorAll('.rawclaw-remove-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        removeRawClawName(btn.dataset.key);
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        await removeRawClawName(btn.dataset.key);
         renderRawClawRaffle();
       });
     });
     const clearBtn = document.getElementById('rawclawClearAllBtn');
     if (clearBtn) {
-      clearBtn.addEventListener('click', () => {
+      clearBtn.addEventListener('click', async () => {
         if (!rawclawState.names.length) return;
         if (!window.confirm('Remove all participants and reset winners?')) return;
-        clearAllRawClawNames();
+        clearBtn.disabled = true;
+        await clearAllRawClawNames();
         renderRawClawRaffle();
       });
     }
