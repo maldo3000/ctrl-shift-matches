@@ -815,197 +815,6 @@ body {
   background: var(--surface-2);
   color: var(--text-dim);
 }
-
-.rawclaw-tabs {
-  display: flex;
-  gap: 6px;
-  padding: 4px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  margin-bottom: 16px;
-}
-
-.rawclaw-tab {
-  flex: 1;
-  padding: 10px 14px;
-  font-family: 'Space Mono', monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 700;
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  border-radius: 9px;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-
-.rawclaw-tab.active {
-  background: var(--accent);
-  color: var(--bg);
-}
-
-.rawclaw-tab:not(.active):hover {
-  color: var(--text);
-}
-
-.rawclaw-panel {
-  animation: fadeUp 0.25s ease both;
-}
-
-.rawclaw-add-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
-}
-
-.rawclaw-add-form input {
-  flex: 1;
-  min-width: 0;
-  padding: 13px 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  font-family: 'Space Mono', monospace;
-  font-size: 0.8rem;
-  outline: none;
-}
-
-.rawclaw-add-form input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
-}
-
-.rawclaw-add-form .raffle-btn {
-  flex: 0 0 auto;
-  min-width: 0;
-  padding: 13px 20px;
-}
-
-.rawclaw-add-status {
-  min-height: 1.1em;
-  font-size: 0.72rem;
-  color: #ff6f91;
-  margin-bottom: 12px;
-}
-
-.rawclaw-names-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin-bottom: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-  padding-top: 14px;
-}
-
-.rawclaw-link-btn {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-family: 'Space Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: 4px 6px;
-}
-
-.rawclaw-link-btn:not(:disabled):hover {
-  color: #ff6f91;
-}
-
-.rawclaw-link-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.rawclaw-names-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-.rawclaw-name-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  font-size: 0.8rem;
-}
-
-.rawclaw-name-item.won {
-  opacity: 0.55;
-  text-decoration: line-through;
-  text-decoration-color: var(--text-dim);
-}
-
-.rawclaw-name-index {
-  font-family: 'Space Mono', monospace;
-  font-size: 0.68rem;
-  color: var(--text-dim);
-  min-width: 22px;
-  text-align: right;
-}
-
-.rawclaw-name-text {
-  flex: 1;
-  word-break: break-word;
-}
-
-.rawclaw-name-flag {
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-
-.rawclaw-remove-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s, border-color 0.2s;
-}
-
-.rawclaw-remove-btn:hover {
-  color: #ff6f91;
-  border-color: #ff6f91;
-}
-
-.rawclaw-name-empty {
-  padding: 18px 12px;
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  text-align: center;
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-}
 </style>
 </head>
 <body>
@@ -6332,106 +6141,63 @@ function renderRaffle() {
 }
 
 // ============================================================
-// RAWCLAW RAFFLE — standalone raffle for events with no Luma data
+// RAWCLAW RAFFLE — Luma-backed raffle for a fixed event
 // ============================================================
-const RAWCLAW_API_ENDPOINT = '/api/rawclaw';
-const RAWCLAW_POLL_INTERVAL_MS = 3000;
+const RAWCLAW_EVENT_API_ID = 'evt-2F6QIs9KR7Jq7jP';
 
 const rawclawState = {
-  activeTab: 'names',
   names: [],
+  guestCount: 0,
   excludedWinners: new Set(),
   winnerHistory: [],
   lastWinner: '',
-  updatedAt: 0,
   spinning: false,
   displayedName: '',
   statusMessage: '',
-  addStatusMessage: '',
-  bannerMessage: '',
+  errorMessage: '',
   loaded: false,
-  pending: false,
-  pollTimerId: null,
+  loading: false,
   spinTimerId: null,
   confettiTimerId: null,
 };
 
-function applyServerState(payload) {
-  if (!payload || typeof payload !== 'object') return false;
-  if (payload.error) {
-    rawclawState.loaded = true;
-    rawclawState.bannerMessage = payload.error === 'persistence-not-configured'
-      ? 'Shared storage is not connected yet — names will not sync across devices until a Vercel KV database is linked to the project.'
-      : (payload.message || `Sync error: ${payload.error}`);
-    return false;
-  }
-  const incomingUpdated = Number.isFinite(payload.updatedAt) ? payload.updatedAt : 0;
-  if (rawclawState.loaded && incomingUpdated && incomingUpdated === rawclawState.updatedAt) {
-    return false;
-  }
-  const prevLastWinner = rawclawState.lastWinner;
-  rawclawState.names = Array.isArray(payload.names) ? payload.names.filter((n) => typeof n === 'string') : [];
-  rawclawState.excludedWinners = new Set(Array.isArray(payload.winners) ? payload.winners.filter((k) => typeof k === 'string') : []);
-  rawclawState.winnerHistory = Array.isArray(payload.history) ? payload.history.filter((n) => typeof n === 'string') : [];
-  rawclawState.lastWinner = typeof payload.lastWinner === 'string' ? payload.lastWinner : '';
-  rawclawState.updatedAt = incomingUpdated;
-  rawclawState.loaded = true;
-  rawclawState.bannerMessage = '';
-  if (
-    !rawclawState.spinning &&
-    rawclawState.lastWinner &&
-    prevLastWinner !== rawclawState.lastWinner
-  ) {
-    rawclawState.displayedName = rawclawState.lastWinner;
-    rawclawState.statusMessage = `${rawclawState.lastWinner} wins this round.`;
-  }
-  return true;
-}
-
-async function rawclawFetch(method, body) {
-  const options = { method, headers: { 'Content-Type': 'application/json' }, cache: 'no-store' };
-  if (body) options.body = JSON.stringify(body);
-  let resp;
-  try {
-    resp = await fetch(RAWCLAW_API_ENDPOINT, options);
-  } catch (err) {
-    return { error: 'network-error', message: 'Unable to reach the server. Check your connection.' };
-  }
+async function loadRawClawGuests() {
+  if (rawclawState.loading) return;
+  rawclawState.loading = true;
+  rawclawState.errorMessage = '';
   let payload = null;
-  try { payload = await resp.json(); } catch (_) { payload = null; }
-  if (!resp.ok) {
-    return payload && payload.error
-      ? payload
-      : { error: `http-${resp.status}`, message: `Server error (${resp.status}).` };
-  }
-  return payload || {};
-}
-
-async function syncRawClawFromServer() {
-  const payload = await rawclawFetch('GET');
-  const changed = applyServerState(payload);
-  if (changed || payload.error) {
-    renderRawClawRaffle({ skipInputRefocus: true });
-  }
-}
-
-function startRawClawPolling() {
-  stopRawClawPolling();
-  rawclawState.pollTimerId = window.setInterval(() => {
-    if (document.hidden) return;
-    if (!isRawClawRaffleRoute()) {
-      stopRawClawPolling();
-      return;
+  try {
+    const url = `/api/matches?event_api_id=${encodeURIComponent(RAWCLAW_EVENT_API_ID)}&mode=live`;
+    const resp = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    payload = await resp.json().catch(() => null);
+    if (!resp.ok || !payload || payload.error) {
+      const detail = (payload && (payload.error || payload.message)) || `HTTP ${resp.status}`;
+      throw new Error(detail);
     }
-    syncRawClawFromServer();
-  }, RAWCLAW_POLL_INTERVAL_MS);
-}
-
-function stopRawClawPolling() {
-  if (rawclawState.pollTimerId) {
-    window.clearInterval(rawclawState.pollTimerId);
-    rawclawState.pollTimerId = null;
+  } catch (err) {
+    rawclawState.errorMessage = `Could not load participants from Luma: ${err && err.message ? err.message : err}`;
+    rawclawState.loading = false;
+    rawclawState.loaded = true;
+    if (isRawClawRaffleRoute()) renderRawClawRaffle();
+    return;
   }
+  const guests = (payload && payload.guests) || {};
+  const seen = new Set();
+  const names = [];
+  Object.values(guests).forEach((g) => {
+    const name = String(g && g.name || '').trim();
+    if (!name) return;
+    const key = normalizeKey(name);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    names.push(name);
+  });
+  names.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  rawclawState.names = names;
+  rawclawState.guestCount = names.length;
+  rawclawState.loaded = true;
+  rawclawState.loading = false;
+  if (isRawClawRaffleRoute()) renderRawClawRaffle();
 }
 
 function getRawClawPool() {
@@ -6450,52 +6216,10 @@ function clearRawClawTimers() {
   stopRaffleDrumRoll();
 }
 
-async function addRawClawName(raw) {
-  const name = String(raw || '').trim().replace(/\s+/g, ' ');
-  if (!name) return { ok: false, reason: 'Enter a name first.' };
-  const payload = await rawclawFetch('POST', { action: 'add', name });
-  if (payload.error) {
-    return { ok: false, reason: payload.message || `Could not add name (${payload.error}).` };
-  }
-  applyServerState(payload);
-  return { ok: true };
-}
-
-async function removeRawClawName(key) {
-  const normalized = normalizeKey(key);
-  if (!normalized) return;
-  const payload = await rawclawFetch('POST', { action: 'remove', key: normalized });
-  if (payload.error) {
-    rawclawState.bannerMessage = payload.message || `Could not remove (${payload.error}).`;
-  } else {
-    applyServerState(payload);
-  }
-}
-
-async function clearAllRawClawNames() {
-  clearRawClawTimers();
-  rawclawState.spinning = false;
-  rawclawState.displayedName = '';
-  rawclawState.statusMessage = '';
-  const payload = await rawclawFetch('POST', { action: 'clear' });
-  if (payload.error) {
-    rawclawState.bannerMessage = payload.message || `Could not clear (${payload.error}).`;
-  } else {
-    applyServerState(payload);
-  }
-}
-
-function setRawClawTab(tab) {
-  const next = tab === 'raffle' ? 'raffle' : 'names';
-  if (rawclawState.activeTab === next) return;
-  rawclawState.activeTab = next;
-  renderRawClawRaffle();
-}
-
 function updateRawClawDisplay(name, options = {}) {
   const value = String(name || '').trim();
   rawclawState.displayedName = value;
-  if (!isRawClawRaffleRoute() || rawclawState.activeTab !== 'raffle') return;
+  if (!isRawClawRaffleRoute()) return;
   const nameEl = document.getElementById('rawclawName');
   const badgeEl = document.getElementById('rawclawWinnerBadge');
   if (nameEl) nameEl.textContent = value || 'Waiting for spin...';
@@ -6519,7 +6243,7 @@ function launchRawClawConfetti() {
   }, 1800);
 }
 
-async function finalizeRawClawSpin(winnerName) {
+function finalizeRawClawSpin(winnerName) {
   stopRaffleDrumRoll();
   const winner = String(winnerName || '').trim();
   rawclawState.spinning = false;
@@ -6529,13 +6253,8 @@ async function finalizeRawClawSpin(winnerName) {
     : 'Unable to select a winner.';
   if (winner) {
     rawclawState.excludedWinners.add(normalizeKey(winner));
-    rawclawState.winnerHistory = [winner, ...rawclawState.winnerHistory.filter((n) => normalizeKey(n) !== normalizeKey(winner))].slice(0, RAFFLE_HISTORY_LIMIT);
-    const payload = await rawclawFetch('POST', { action: 'recordWinner', winner });
-    if (payload.error) {
-      rawclawState.bannerMessage = payload.message || `Winner not saved (${payload.error}).`;
-    } else {
-      applyServerState(payload);
-    }
+    rawclawState.winnerHistory.unshift(winner);
+    rawclawState.winnerHistory = rawclawState.winnerHistory.slice(0, RAFFLE_HISTORY_LIMIT);
   }
   renderRawClawRaffle();
   launchRawClawConfetti();
@@ -6546,14 +6265,14 @@ async function startRawClawSpin() {
   const pool = getRawClawPool();
   if (!pool.length) {
     rawclawState.statusMessage = rawclawState.names.length
-      ? 'Every entered name has already won. Reset the pool to spin again.'
-      : 'Add names in the Participants tab first.';
+      ? 'Every Luma attendee has already won. Reset the pool to spin again.'
+      : 'No attendees loaded from Luma yet.';
     renderRawClawRaffle();
     return;
   }
   clearRawClawTimers();
   rawclawState.spinning = true;
-  rawclawState.statusMessage = `Spinning through ${pool.length} name${pool.length === 1 ? '' : 's'}...`;
+  rawclawState.statusMessage = `Spinning through ${pool.length} attendee${pool.length === 1 ? '' : 's'}...`;
   const rollStarted = await startRaffleDrumRoll();
   if (!rollStarted) {
     rawclawState.statusMessage += ' (sound unavailable on this browser/device)';
@@ -6563,7 +6282,7 @@ async function startRawClawSpin() {
   const startedAt = Date.now();
   const totalDurationMs = RAFFLE_SPIN_DURATION_MS;
   const tick = () => {
-    if (!isRawClawRaffleRoute() || rawclawState.activeTab !== 'raffle') {
+    if (!isRawClawRaffleRoute()) {
       clearRawClawTimers();
       rawclawState.spinning = false;
       return;
@@ -6584,79 +6303,55 @@ async function startRawClawSpin() {
   renderRawClawRaffle();
 }
 
-async function resetRawClawPool() {
+function resetRawClawPool() {
   clearRawClawTimers();
   rawclawState.spinning = false;
+  rawclawState.excludedWinners.clear();
+  rawclawState.winnerHistory = [];
+  rawclawState.lastWinner = '';
   rawclawState.displayedName = '';
   rawclawState.statusMessage = 'Winner pool reset. Ready for a new round.';
-  const payload = await rawclawFetch('POST', { action: 'resetWinners' });
-  if (payload.error) {
-    rawclawState.bannerMessage = payload.message || `Could not reset (${payload.error}).`;
-  } else {
-    applyServerState(payload);
-  }
   renderRawClawRaffle();
 }
 
 function closeRawClawRaffle() {
   clearRawClawTimers();
-  stopRawClawPolling();
   window.location.assign('/');
 }
 
-function renderRawClawRaffle(options = {}) {
-  if (!rawclawState.loaded && !rawclawState.pending) {
-    rawclawState.pending = true;
-    syncRawClawFromServer().finally(() => { rawclawState.pending = false; });
-    startRawClawPolling();
+function renderRawClawRaffle() {
+  if (!rawclawState.loaded && !rawclawState.loading) {
+    loadRawClawGuests();
   }
   const nameCount = rawclawState.names.length;
   const remainingCount = getRawClawPool().length;
-  const activeTab = rawclawState.activeTab;
   const displayedName = rawclawState.displayedName || rawclawState.lastWinner || '';
   const spinLabel = rawclawState.spinning
     ? 'Spinning...'
     : rawclawState.lastWinner ? 'Spin Again' : 'Start Spin';
+  const subtitle = rawclawState.errorMessage
+    ? rawclawState.errorMessage
+    : rawclawState.loaded
+      ? `${nameCount} attendee${nameCount === 1 ? '' : 's'} pulled from Luma.`
+      : 'Pulling attendees from Luma…';
+  const emptyState = !nameCount
+    ? rawclawState.errorMessage
+      ? 'Could not load attendees. Check the Luma event id.'
+      : 'No attendees yet. Once people register on Luma, they\'ll show up here.'
+    : 'Tap spin to pick a random winner from this event.';
 
-  const nameListHtml = nameCount
-    ? rawclawState.names.map((n, i) => {
-        const key = normalizeKey(n);
-        const won = rawclawState.excludedWinners.has(key);
-        const safeName = escapeHtml(n);
-        const safeKey = escapeHtml(key);
-        return `<li class="rawclaw-name-item${won ? ' won' : ''}">
-          <span class="rawclaw-name-index">${i + 1}</span>
-          <span class="rawclaw-name-text">${safeName}</span>
-          ${won ? '<span class="rawclaw-name-flag">Won</span>' : ''}
-          <button class="rawclaw-remove-btn" type="button" data-key="${safeKey}" aria-label="Remove ${safeName}">×</button>
-        </li>`;
-      }).join('')
-    : '<li class="rawclaw-name-empty">No participants yet. Add the first name above.</li>';
-
-  const namesTabHtml = `
-    <div class="rawclaw-panel">
-      <form class="rawclaw-add-form" id="rawclawAddForm" autocomplete="off">
-        <input type="text" id="rawclawNameInput" placeholder="Participant name" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" data-1p-ignore data-lpignore="true" />
-        <button type="submit" class="raffle-btn primary">Add</button>
-      </form>
-      <div class="rawclaw-add-status" id="rawclawAddStatus">${escapeHtml(rawclawState.addStatusMessage || '')}</div>
-      <div class="rawclaw-names-header">
-        <span>Participants (${nameCount})</span>
-        <button type="button" id="rawclawClearAllBtn" class="rawclaw-link-btn"${nameCount ? '' : ' disabled'}>Clear all</button>
-      </div>
-      <ul class="rawclaw-names-list">${nameListHtml}</ul>
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">RawClaw</div>
+      <h1>RawClaw <span class="highlight">Raffle</span></h1>
+      <p class="subtitle">${escapeHtml(subtitle)}</p>
     </div>
-  `;
-
-  const raffleEmptyState = !nameCount
-    ? 'Add names in the Participants tab first.'
-    : 'Tap spin to pick a random winner from the entered names.';
-
-  const raffleTabHtml = `
-    <div class="rawclaw-panel">
+    <div class="raffle-shell">
+      <button class="back-btn" onclick="closeRawClawRaffleRoute()">← Back</button>
+      ${rawclawState.errorMessage ? `<div class="rawclaw-banner">${escapeHtml(rawclawState.errorMessage)}</div>` : ''}
       <div class="raffle-card">
         <div class="raffle-metadata">
-          <span class="raffle-meta-pill live">RawClaw raffle</span>
+          <span class="raffle-meta-pill live">Luma attendees</span>
           <span class="raffle-meta-pill">${nameCount} entered</span>
           <span class="raffle-meta-pill">${remainingCount}/${nameCount || 0} remaining</span>
         </div>
@@ -6676,7 +6371,7 @@ function renderRawClawRaffle(options = {}) {
             Reset Winners
           </button>
         </div>
-        <div class="raffle-status">${escapeHtml(rawclawState.statusMessage) || raffleEmptyState}</div>
+        <div class="raffle-status">${escapeHtml(rawclawState.statusMessage) || emptyState}</div>
         ${rawclawState.winnerHistory.length ? `
           <div class="raffle-history">
             <h4>Recent winners</h4>
@@ -6687,83 +6382,15 @@ function renderRawClawRaffle(options = {}) {
         ` : ''}
       </div>
     </div>
-  `;
-
-  app.innerHTML = `
-    <div class="header">
-      <div class="header-label">RawClaw</div>
-      <h1>RawClaw <span class="highlight">Raffle</span></h1>
-      <p class="subtitle">Enter participants, then draw a random winner.</p>
-    </div>
-    <div class="raffle-shell">
-      <button class="back-btn" onclick="closeRawClawRaffleRoute()">← Back</button>
-      ${rawclawState.bannerMessage ? `<div class="rawclaw-banner">${escapeHtml(rawclawState.bannerMessage)}</div>` : ''}
-      ${!rawclawState.loaded ? '<div class="rawclaw-banner subtle">Syncing with shared list…</div>' : ''}
-      <div class="rawclaw-tabs" role="tablist">
-        <button type="button" role="tab" aria-selected="${activeTab === 'names'}" class="rawclaw-tab${activeTab === 'names' ? ' active' : ''}" data-tab="names">Participants</button>
-        <button type="button" role="tab" aria-selected="${activeTab === 'raffle'}" class="rawclaw-tab${activeTab === 'raffle' ? ' active' : ''}" data-tab="raffle">Raffle</button>
-      </div>
-      ${activeTab === 'names' ? namesTabHtml : raffleTabHtml}
-    </div>
     <div class="footer">
       Built with ☕ for the CTRL SHIFT community
     </div>
   `;
 
-  rawclawState.addStatusMessage = '';
-
-  document.querySelectorAll('.rawclaw-tab').forEach((btn) => {
-    btn.addEventListener('click', () => setRawClawTab(btn.dataset.tab));
-  });
-
-  if (activeTab === 'names') {
-    const form = document.getElementById('rawclawAddForm');
-    const input = document.getElementById('rawclawNameInput');
-    const statusEl = document.getElementById('rawclawAddStatus');
-    if (form && input) {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const value = input.value;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.disabled = true;
-        const res = await addRawClawName(value);
-        if (submitBtn) submitBtn.disabled = false;
-        if (!res.ok) {
-          if (statusEl) statusEl.textContent = res.reason;
-          input.focus();
-          input.select();
-          return;
-        }
-        input.value = '';
-        renderRawClawRaffle();
-        const nextInput = document.getElementById('rawclawNameInput');
-        if (nextInput) nextInput.focus();
-      });
-      if (!options.skipInputRefocus) setTimeout(() => input.focus(), 0);
-    }
-    document.querySelectorAll('.rawclaw-remove-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        btn.disabled = true;
-        await removeRawClawName(btn.dataset.key);
-        renderRawClawRaffle();
-      });
-    });
-    const clearBtn = document.getElementById('rawclawClearAllBtn');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', async () => {
-        if (!rawclawState.names.length) return;
-        if (!window.confirm('Remove all participants and reset winners?')) return;
-        clearBtn.disabled = true;
-        await clearAllRawClawNames();
-        renderRawClawRaffle();
-      });
-    }
-  } else {
-    const spinBtn = document.getElementById('rawclawSpinBtn');
-    const resetBtn = document.getElementById('rawclawResetBtn');
-    if (spinBtn) spinBtn.addEventListener('click', startRawClawSpin);
-    if (resetBtn) resetBtn.addEventListener('click', resetRawClawPool);
-  }
+  const spinBtn = document.getElementById('rawclawSpinBtn');
+  const resetBtn = document.getElementById('rawclawResetBtn');
+  if (spinBtn) spinBtn.addEventListener('click', startRawClawSpin);
+  if (resetBtn) resetBtn.addEventListener('click', resetRawClawPool);
 }
 
 async function initializeDataSource() {
