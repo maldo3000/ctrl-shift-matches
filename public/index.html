@@ -796,6 +796,198 @@ body {
     min-width: 100%;
   }
 }
+
+/* RockClaw raffle */
+.rockclaw-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.rockclaw-tab {
+  flex: 1;
+  padding: 10px 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.rockclaw-tab.active {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.rockclaw-tab:not(.active):hover {
+  color: var(--text);
+}
+
+.rockclaw-panel {
+  animation: fadeUp 0.25s ease both;
+}
+
+.rockclaw-add-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.rockclaw-add-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 13px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.rockclaw-add-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.rockclaw-add-form .raffle-btn {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 13px 20px;
+}
+
+.rockclaw-add-status {
+  min-height: 1.1em;
+  font-size: 0.72rem;
+  color: #ff6f91;
+  margin-bottom: 12px;
+}
+
+.rockclaw-names-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.rockclaw-link-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.rockclaw-link-btn:not(:disabled):hover {
+  color: #ff6f91;
+}
+
+.rockclaw-link-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rockclaw-names-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.rockclaw-name-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+.rockclaw-name-item.won {
+  opacity: 0.55;
+  text-decoration: line-through;
+  text-decoration-color: var(--text-dim);
+}
+
+.rockclaw-name-index {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  min-width: 22px;
+  text-align: right;
+}
+
+.rockclaw-name-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+.rockclaw-name-flag {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.rockclaw-remove-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.rockclaw-remove-btn:hover {
+  color: #ff6f91;
+  border-color: #ff6f91;
+}
+
+.rockclaw-name-empty {
+  padding: 18px 12px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
 </style>
 </head>
 <body>
@@ -5843,6 +6035,16 @@ function isRaffleRoute() {
   return /^\/raffle\/?$/.test(window.location.pathname);
 }
 
+function isRockClawRaffleRoute() {
+  return /^\/rawclaw-raffle\/?$/i.test(window.location.pathname);
+}
+
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
 function getRaffleEligibleGuests() {
   const seen = new Set();
   const uniqueNames = [];
@@ -6111,6 +6313,387 @@ function renderRaffle() {
   if (resetBtn) resetBtn.addEventListener('click', resetRafflePool);
 }
 
+// ============================================================
+// ROCKCLAW RAFFLE — standalone raffle for events with no Luma data
+// ============================================================
+const ROCKCLAW_STORAGE_KEY_NAMES = 'rockclaw_raffle_names_v1';
+const ROCKCLAW_STORAGE_KEY_WINNERS = 'rockclaw_raffle_winners_v1';
+
+const rockclawState = {
+  activeTab: 'names',
+  names: [],
+  spinning: false,
+  displayedName: '',
+  lastWinner: '',
+  statusMessage: '',
+  addStatusMessage: '',
+  excludedWinners: new Set(),
+  winnerHistory: [],
+  spinTimerId: null,
+  confettiTimerId: null,
+  hydrated: false,
+};
+
+function loadRockClawState() {
+  if (rockclawState.hydrated) return;
+  rockclawState.hydrated = true;
+  try {
+    const raw = localStorage.getItem(ROCKCLAW_STORAGE_KEY_NAMES);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        rockclawState.names = parsed.filter((n) => typeof n === 'string' && n.trim());
+      }
+    }
+  } catch (_) {}
+  try {
+    const raw = localStorage.getItem(ROCKCLAW_STORAGE_KEY_WINNERS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.winners)) {
+        parsed.winners.forEach((k) => { if (typeof k === 'string') rockclawState.excludedWinners.add(k); });
+      }
+      if (parsed && Array.isArray(parsed.history)) {
+        rockclawState.winnerHistory = parsed.history.filter((n) => typeof n === 'string');
+        if (rockclawState.winnerHistory[0]) rockclawState.lastWinner = rockclawState.winnerHistory[0];
+      }
+    }
+  } catch (_) {}
+}
+
+function saveRockClawNames() {
+  try {
+    localStorage.setItem(ROCKCLAW_STORAGE_KEY_NAMES, JSON.stringify(rockclawState.names));
+  } catch (_) {}
+}
+
+function saveRockClawWinners() {
+  try {
+    localStorage.setItem(ROCKCLAW_STORAGE_KEY_WINNERS, JSON.stringify({
+      winners: Array.from(rockclawState.excludedWinners),
+      history: rockclawState.winnerHistory,
+    }));
+  } catch (_) {}
+}
+
+function getRockClawPool() {
+  return rockclawState.names.filter((n) => !rockclawState.excludedWinners.has(normalizeKey(n)));
+}
+
+function clearRockClawTimers() {
+  if (rockclawState.spinTimerId) {
+    window.clearTimeout(rockclawState.spinTimerId);
+    rockclawState.spinTimerId = null;
+  }
+  if (rockclawState.confettiTimerId) {
+    window.clearTimeout(rockclawState.confettiTimerId);
+    rockclawState.confettiTimerId = null;
+  }
+  stopRaffleDrumRoll();
+}
+
+function addRockClawName(raw) {
+  const name = String(raw || '').trim().replace(/\s+/g, ' ');
+  if (!name) return { ok: false, reason: 'Enter a name first.' };
+  const key = normalizeKey(name);
+  if (!key) return { ok: false, reason: 'Enter a valid name.' };
+  if (rockclawState.names.some((n) => normalizeKey(n) === key)) {
+    return { ok: false, reason: `${name} is already in the list.` };
+  }
+  rockclawState.names.push(name);
+  saveRockClawNames();
+  return { ok: true };
+}
+
+function removeRockClawName(key) {
+  const normalized = normalizeKey(key);
+  if (!normalized) return;
+  rockclawState.names = rockclawState.names.filter((n) => normalizeKey(n) !== normalized);
+  rockclawState.excludedWinners.delete(normalized);
+  rockclawState.winnerHistory = rockclawState.winnerHistory.filter((n) => normalizeKey(n) !== normalized);
+  if (rockclawState.lastWinner && normalizeKey(rockclawState.lastWinner) === normalized) {
+    rockclawState.lastWinner = '';
+    rockclawState.displayedName = '';
+  }
+  saveRockClawNames();
+  saveRockClawWinners();
+}
+
+function clearAllRockClawNames() {
+  clearRockClawTimers();
+  rockclawState.spinning = false;
+  rockclawState.names = [];
+  rockclawState.excludedWinners.clear();
+  rockclawState.winnerHistory = [];
+  rockclawState.lastWinner = '';
+  rockclawState.displayedName = '';
+  rockclawState.statusMessage = '';
+  saveRockClawNames();
+  saveRockClawWinners();
+}
+
+function setRockClawTab(tab) {
+  const next = tab === 'raffle' ? 'raffle' : 'names';
+  if (rockclawState.activeTab === next) return;
+  rockclawState.activeTab = next;
+  renderRockClawRaffle();
+}
+
+function updateRockClawDisplay(name, options = {}) {
+  const value = String(name || '').trim();
+  rockclawState.displayedName = value;
+  if (!isRockClawRaffleRoute() || rockclawState.activeTab !== 'raffle') return;
+  const nameEl = document.getElementById('rockclawName');
+  const badgeEl = document.getElementById('rockclawWinnerBadge');
+  if (nameEl) nameEl.textContent = value || 'Waiting for spin...';
+  if (badgeEl) badgeEl.textContent = options.winner ? 'Winner Selected' : '';
+}
+
+function launchRockClawConfetti() {
+  const confettiRoot = document.getElementById('rockclawConfetti');
+  if (!confettiRoot) return;
+  const colors = ['#c8ff00', '#ff3d8e', '#3d8eff', '#3dff8e', '#ff8e3d'];
+  const pieces = Array.from({ length: 28 }).map(() => {
+    const x = `${secureRandomInt(100)}%`;
+    const rotate = `${secureRandomInt(360)}deg`;
+    const delay = `${secureRandomInt(350)}ms`;
+    const color = colors[secureRandomInt(colors.length)];
+    return `<span class="raffle-confetti-piece" style="--x:${x};--r:${rotate};--d:${delay};--color:${color}"></span>`;
+  });
+  confettiRoot.innerHTML = pieces.join('');
+  rockclawState.confettiTimerId = window.setTimeout(() => {
+    if (confettiRoot) confettiRoot.innerHTML = '';
+  }, 1800);
+}
+
+function finalizeRockClawSpin(winnerName) {
+  stopRaffleDrumRoll();
+  const winner = String(winnerName || '').trim();
+  rockclawState.spinning = false;
+  rockclawState.lastWinner = winner;
+  rockclawState.statusMessage = winner
+    ? `${winner} wins this round.`
+    : 'Unable to select a winner.';
+  if (winner) {
+    rockclawState.excludedWinners.add(normalizeKey(winner));
+    rockclawState.winnerHistory.unshift(winner);
+    rockclawState.winnerHistory = rockclawState.winnerHistory.slice(0, RAFFLE_HISTORY_LIMIT);
+    saveRockClawWinners();
+  }
+  renderRockClawRaffle();
+  launchRockClawConfetti();
+}
+
+async function startRockClawSpin() {
+  if (rockclawState.spinning) return;
+  const pool = getRockClawPool();
+  if (!pool.length) {
+    rockclawState.statusMessage = rockclawState.names.length
+      ? 'Every entered name has already won. Reset the pool to spin again.'
+      : 'Add names in the Participants tab first.';
+    renderRockClawRaffle();
+    return;
+  }
+  clearRockClawTimers();
+  rockclawState.spinning = true;
+  rockclawState.statusMessage = `Spinning through ${pool.length} name${pool.length === 1 ? '' : 's'}...`;
+  const rollStarted = await startRaffleDrumRoll();
+  if (!rollStarted) {
+    rockclawState.statusMessage += ' (sound unavailable on this browser/device)';
+  }
+  const winnerName = pool[secureRandomInt(pool.length)];
+  let cursor = secureRandomInt(pool.length);
+  const startedAt = Date.now();
+  const totalDurationMs = RAFFLE_SPIN_DURATION_MS;
+  const tick = () => {
+    if (!isRockClawRaffleRoute() || rockclawState.activeTab !== 'raffle') {
+      clearRockClawTimers();
+      rockclawState.spinning = false;
+      return;
+    }
+    const elapsed = Date.now() - startedAt;
+    if (elapsed >= totalDurationMs) {
+      updateRockClawDisplay(winnerName, { winner: true });
+      finalizeRockClawSpin(winnerName);
+      return;
+    }
+    updateRockClawDisplay(pool[cursor], { winner: false });
+    cursor = (cursor + 1) % pool.length;
+    const progress = elapsed / Math.max(totalDurationMs, 1);
+    const delay = 40 + Math.round(progress * progress * 250);
+    rockclawState.spinTimerId = window.setTimeout(tick, delay);
+  };
+  tick();
+  renderRockClawRaffle();
+}
+
+function resetRockClawPool() {
+  clearRockClawTimers();
+  rockclawState.spinning = false;
+  rockclawState.excludedWinners.clear();
+  rockclawState.winnerHistory = [];
+  rockclawState.lastWinner = '';
+  rockclawState.displayedName = '';
+  rockclawState.statusMessage = 'Winner pool reset. Ready for a new round.';
+  saveRockClawWinners();
+  renderRockClawRaffle();
+}
+
+function closeRockClawRaffle() {
+  clearRockClawTimers();
+  window.location.assign('/');
+}
+
+function renderRockClawRaffle() {
+  loadRockClawState();
+  const nameCount = rockclawState.names.length;
+  const remainingCount = getRockClawPool().length;
+  const activeTab = rockclawState.activeTab;
+  const displayedName = rockclawState.displayedName || rockclawState.lastWinner || '';
+  const spinLabel = rockclawState.spinning
+    ? 'Spinning...'
+    : rockclawState.lastWinner ? 'Spin Again' : 'Start Spin';
+
+  const nameListHtml = nameCount
+    ? rockclawState.names.map((n, i) => {
+        const key = normalizeKey(n);
+        const won = rockclawState.excludedWinners.has(key);
+        const safeName = escapeHtml(n);
+        const safeKey = escapeHtml(key);
+        return `<li class="rockclaw-name-item${won ? ' won' : ''}">
+          <span class="rockclaw-name-index">${i + 1}</span>
+          <span class="rockclaw-name-text">${safeName}</span>
+          ${won ? '<span class="rockclaw-name-flag">Won</span>' : ''}
+          <button class="rockclaw-remove-btn" type="button" data-key="${safeKey}" aria-label="Remove ${safeName}">×</button>
+        </li>`;
+      }).join('')
+    : '<li class="rockclaw-name-empty">No participants yet. Add the first name above.</li>';
+
+  const namesTabHtml = `
+    <div class="rockclaw-panel">
+      <form class="rockclaw-add-form" id="rockclawAddForm" autocomplete="off">
+        <input type="text" id="rockclawNameInput" placeholder="Participant name" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" data-1p-ignore data-lpignore="true" />
+        <button type="submit" class="raffle-btn primary">Add</button>
+      </form>
+      <div class="rockclaw-add-status" id="rockclawAddStatus">${escapeHtml(rockclawState.addStatusMessage || '')}</div>
+      <div class="rockclaw-names-header">
+        <span>Participants (${nameCount})</span>
+        <button type="button" id="rockclawClearAllBtn" class="rockclaw-link-btn"${nameCount ? '' : ' disabled'}>Clear all</button>
+      </div>
+      <ul class="rockclaw-names-list">${nameListHtml}</ul>
+    </div>
+  `;
+
+  const raffleEmptyState = !nameCount
+    ? 'Add names in the Participants tab first.'
+    : 'Tap spin to pick a random winner from the entered names.';
+
+  const raffleTabHtml = `
+    <div class="rockclaw-panel">
+      <div class="raffle-card">
+        <div class="raffle-metadata">
+          <span class="raffle-meta-pill live">RockClaw raffle</span>
+          <span class="raffle-meta-pill">${nameCount} entered</span>
+          <span class="raffle-meta-pill">${remainingCount}/${nameCount || 0} remaining</span>
+        </div>
+        <div class="raffle-display" aria-live="polite">
+          <div>
+            <div class="raffle-display-label">Current pick</div>
+            <div class="raffle-name" id="rockclawName">${escapeHtml(displayedName) || 'Waiting for spin...'}</div>
+            <div class="raffle-winner-badge" id="rockclawWinnerBadge">${rockclawState.lastWinner && !rockclawState.spinning ? 'Winner Selected' : ''}</div>
+          </div>
+          <div class="raffle-confetti" id="rockclawConfetti"></div>
+        </div>
+        <div class="raffle-controls">
+          <button class="raffle-btn primary" id="rockclawSpinBtn" ${rockclawState.spinning || !remainingCount ? 'disabled' : ''}>
+            ${spinLabel}
+          </button>
+          <button class="raffle-btn secondary" id="rockclawResetBtn" ${rockclawState.spinning ? 'disabled' : ''}>
+            Reset Winners
+          </button>
+        </div>
+        <div class="raffle-status">${escapeHtml(rockclawState.statusMessage) || raffleEmptyState}</div>
+        ${rockclawState.winnerHistory.length ? `
+          <div class="raffle-history">
+            <h4>Recent winners</h4>
+            <div class="raffle-history-list">
+              ${rockclawState.winnerHistory.map((name) => `<span class="raffle-history-item">${escapeHtml(name)}</span>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    </div>
+  `;
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">RockClaw</div>
+      <h1>RockClaw <span class="highlight">Raffle</span></h1>
+      <p class="subtitle">Enter participants, then draw a random winner.</p>
+    </div>
+    <div class="raffle-shell">
+      <button class="back-btn" onclick="closeRockClawRaffleRoute()">← Back</button>
+      <div class="rockclaw-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="${activeTab === 'names'}" class="rockclaw-tab${activeTab === 'names' ? ' active' : ''}" data-tab="names">Participants</button>
+        <button type="button" role="tab" aria-selected="${activeTab === 'raffle'}" class="rockclaw-tab${activeTab === 'raffle' ? ' active' : ''}" data-tab="raffle">Raffle</button>
+      </div>
+      ${activeTab === 'names' ? namesTabHtml : raffleTabHtml}
+    </div>
+    <div class="footer">
+      Built with ☕ for the CTRL SHIFT community
+    </div>
+  `;
+
+  rockclawState.addStatusMessage = '';
+
+  document.querySelectorAll('.rockclaw-tab').forEach((btn) => {
+    btn.addEventListener('click', () => setRockClawTab(btn.dataset.tab));
+  });
+
+  if (activeTab === 'names') {
+    const form = document.getElementById('rockclawAddForm');
+    const input = document.getElementById('rockclawNameInput');
+    const statusEl = document.getElementById('rockclawAddStatus');
+    if (form && input) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const res = addRockClawName(input.value);
+        if (!res.ok) {
+          if (statusEl) statusEl.textContent = res.reason;
+          input.focus();
+          input.select();
+          return;
+        }
+        input.value = '';
+        renderRockClawRaffle();
+        const nextInput = document.getElementById('rockclawNameInput');
+        if (nextInput) nextInput.focus();
+      });
+      setTimeout(() => input.focus(), 0);
+    }
+    document.querySelectorAll('.rockclaw-remove-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        removeRockClawName(btn.dataset.key);
+        renderRockClawRaffle();
+      });
+    });
+    const clearBtn = document.getElementById('rockclawClearAllBtn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (!rockclawState.names.length) return;
+        if (!window.confirm('Remove all participants and reset winners?')) return;
+        clearAllRockClawNames();
+        renderRockClawRaffle();
+      });
+    }
+  } else {
+    const spinBtn = document.getElementById('rockclawSpinBtn');
+    const resetBtn = document.getElementById('rockclawResetBtn');
+    if (spinBtn) spinBtn.addEventListener('click', startRockClawSpin);
+    if (resetBtn) resetBtn.addEventListener('click', resetRockClawPool);
+  }
+}
+
 async function initializeDataSource() {
   const hasScopedFallbackGuests = !!(selectedEventConfig && selectedEventConfig.guests);
   const fallbackGuests = selectedEventConfig
@@ -6214,6 +6797,7 @@ function getGuestByKey(key) {
 
 function shouldRenderEventHub() {
   if (isRaffleRoute()) return false;
+  if (isRockClawRaffleRoute()) return false;
   const p = new URLSearchParams(window.location.search);
   const directParams = ['event', 'event_key', 'event_api_id', 'eventApiId', 'event_id', 'name', 'n', 'source'];
   return !directParams.some((param) => p.has(param));
@@ -6307,6 +6891,10 @@ async function renderEventHub() {
 }
 
 function routeMatches() {
+  if (isRockClawRaffleRoute()) {
+    renderRockClawRaffle();
+    return;
+  }
   if (isRaffleRoute()) {
     renderRaffle();
     return;
@@ -6444,6 +7032,7 @@ function selectGuest(key) {
 
 window.selectGuest = selectGuest;
 window.closeRaffleRoute = closeRaffle;
+window.closeRockClawRaffleRoute = closeRockClawRaffle;
 
 function renderProfile(guest) {
   const limitedMatches = (guest.matches || []).slice(0, 5);
@@ -6578,6 +7167,10 @@ window.goBack = function() {
 
 // Handle browser back/forward
 window.addEventListener('popstate', () => {
+  if (isRockClawRaffleRoute()) {
+    renderRockClawRaffle();
+    return;
+  }
   if (shouldRenderEventHub()) {
     renderEventHub();
     return;
@@ -6590,7 +7183,9 @@ window.addEventListener('popstate', () => {
 });
 
 // Init
-if (shouldRenderEventHub()) {
+if (isRockClawRaffleRoute()) {
+  renderRockClawRaffle();
+} else if (shouldRenderEventHub()) {
   renderEventHub();
 } else {
   if (requiresArchiveUnlock() && !isArchiveUnlocked()) {
