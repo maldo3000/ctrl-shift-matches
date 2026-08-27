@@ -890,12 +890,12 @@ body.vol13-raffle-page .footer {
 /* Treasure chest reveal — transparent 15-frame sprite strip, pops in,
    plays once, then twinkles between the last two frames. */
 .raffle-chest-stage {
-  --chest-w: 288px;
-  --chest-h: 320px;
+  --chest-w: 320px;
+  --chest-h: 300px;
   width: var(--chest-w);
   height: var(--chest-h);
   margin: 0 auto 4px;
-  background-image: url('/raffle-treasure-vol13.png?v=20260827b');
+  background-image: url('/raffle-treasure-vol13.png?v=20260827c');
   background-repeat: no-repeat;
   background-size: calc(var(--chest-w) * 15) var(--chest-h);
   background-position: 0 0;
@@ -958,8 +958,8 @@ body.vol13-raffle-page .footer {
 
 @media (max-width: 560px) {
   .raffle-chest-stage {
-    --chest-w: 216px;
-    --chest-h: 240px;
+    --chest-w: 240px;
+    --chest-h: 225px;
   }
 
   .vol13-header {
@@ -6226,7 +6226,7 @@ const RAFFLE_EVENT_THEMES = {
     confettiColors: ['#ec9ea7', '#6454ff', '#202020', '#ffffff'],
   },
 };
-const RAFFLE_CHEST_SPRITE_SRC = '/raffle-treasure-vol13.png?v=20260827b';
+const RAFFLE_CHEST_SPRITE_SRC = '/raffle-treasure-vol13.png?v=20260827c';
 const RAFFLE_CHEST_REVEAL_MS = 1500;
 
 function getActiveRaffleTheme() {
