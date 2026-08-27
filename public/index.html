@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CTRL+SHIFT — Matches</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@900&family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -687,39 +687,136 @@ body {
   background: var(--surface-2);
 }
 
-/* Vol. XIII @ Stan raffle theme — cream ground, pink numerals, ink type,
-   Stan purple accent, lifted from the vol 13 poster. */
+/* ============================================================
+   Vol. XIII @ Stan raffle — full-page takeover in the vol 13
+   poster palette: lavender ground #d0cbff, pink numerals #ec9ea7,
+   ink type #202020, Stan purple #6454ff.
+   ============================================================ */
+body.vol13-raffle-page {
+  background: #d0cbff;
+}
+
+body.vol13-raffle-page::before {
+  content: 'XIII';
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Archivo', 'Helvetica Neue', sans-serif;
+  font-weight: 900;
+  font-size: min(52vw, 36rem);
+  letter-spacing: -0.06em;
+  color: #ec9ea7;
+  opacity: 0.85;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+body.vol13-raffle-page .container {
+  position: relative;
+  z-index: 1;
+}
+
+body.vol13-raffle-page .footer {
+  color: rgba(32, 32, 32, 0.6);
+}
+
+.vol13-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  color: #202020;
+  animation: fadeUp 0.35s ease both;
+}
+
+.vol13-wordmark {
+  font-family: 'Archivo', 'Helvetica Neue', sans-serif;
+  font-weight: 900;
+  font-size: clamp(3.2rem, 10vw, 5.6rem);
+  line-height: 0.84;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: #202020;
+}
+
+.vol13-microcopy {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1.8;
+  color: #202020;
+  max-width: 230px;
+  text-align: left;
+  padding-top: 6px;
+}
+
+.vol13-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #202020;
+  margin: 18px 0 6px;
+  border-top: 2px solid #202020;
+  padding-top: 12px;
+}
+
+.vol13-meta-row .accent {
+  color: #6454ff;
+  font-weight: 700;
+}
+
+.vol13-subtitle {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.66rem;
+  color: rgba(32, 32, 32, 0.65);
+  margin: 0 0 22px;
+}
+
+.raffle-theme-vol13 .back-btn {
+  color: #202020;
+  border-color: rgba(32, 32, 32, 0.4);
+  background: transparent;
+}
+
 .raffle-theme-vol13 .raffle-card {
-  background: #efe9de;
-  border-color: rgba(22, 20, 18, 0.18);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid #202020;
 }
 
 .raffle-theme-vol13 .raffle-card::before {
-  background: linear-gradient(90deg, #e89aac, #6a4df4, #161412);
+  background: linear-gradient(90deg, #ec9ea7, #6454ff, #202020);
 }
 
 .raffle-theme-vol13 .raffle-meta-pill {
-  background: rgba(255, 255, 255, 0.65);
-  border-color: rgba(22, 20, 18, 0.25);
-  color: rgba(22, 20, 18, 0.8);
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(32, 32, 32, 0.45);
+  color: rgba(32, 32, 32, 0.85);
 }
 
 .raffle-theme-vol13 .raffle-meta-pill.live {
-  border-color: rgba(106, 77, 244, 0.45);
-  color: #6a4df4;
+  border-color: #6454ff;
+  color: #6454ff;
 }
 
 .raffle-theme-vol13 .raffle-meta-pill.fallback {
-  border-color: rgba(179, 84, 30, 0.45);
-  color: #b3541e;
+  border-color: rgba(179, 84, 30, 0.6);
+  color: #a34a18;
 }
 
 .raffle-theme-vol13 .raffle-display {
-  border-color: #e89aac;
+  border: 1px solid #202020;
   background:
-    radial-gradient(circle at 12% 10%, rgba(232, 154, 172, 0.35), rgba(0, 0, 0, 0) 50%),
-    radial-gradient(circle at 88% 90%, rgba(106, 77, 244, 0.14), rgba(0, 0, 0, 0) 45%),
-    #f6f1e7;
+    radial-gradient(circle at 12% 10%, rgba(236, 158, 167, 0.4), rgba(0, 0, 0, 0) 50%),
+    radial-gradient(circle at 88% 90%, rgba(100, 84, 255, 0.16), rgba(0, 0, 0, 0) 45%),
+    rgba(255, 255, 255, 0.6);
 }
 
 .raffle-theme-vol13 .raffle-display::after {
@@ -729,60 +826,113 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
+  font-family: 'Archivo', 'Helvetica Neue', sans-serif;
+  font-weight: 900;
   font-size: clamp(4rem, 16vw, 7rem);
   letter-spacing: -0.05em;
-  color: #e89aac;
-  opacity: 0.3;
+  color: #ec9ea7;
+  opacity: 0.4;
   pointer-events: none;
 }
 
-.raffle-theme-vol13 .raffle-display > div {
+.raffle-theme-vol13 .raffle-display > div:first-child {
   position: relative;
   z-index: 1;
+  width: 100%;
 }
 
 .raffle-theme-vol13 .raffle-display-label {
-  color: rgba(22, 20, 18, 0.6);
+  color: rgba(32, 32, 32, 0.6);
 }
 
 .raffle-theme-vol13 .raffle-name {
-  color: #161412;
+  font-family: 'Archivo', 'Helvetica Neue', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: #202020;
 }
 
 .raffle-theme-vol13 .raffle-winner-badge {
-  color: #6a4df4;
+  color: #6454ff;
 }
 
 .raffle-theme-vol13 .raffle-btn.primary {
-  background: #161412;
-  border-color: #161412;
-  color: #efe9de;
+  background: #202020;
+  border-color: #202020;
+  color: #d0cbff;
 }
 
 .raffle-theme-vol13 .raffle-btn.secondary {
   background: transparent;
-  border-color: rgba(22, 20, 18, 0.3);
-  color: rgba(22, 20, 18, 0.65);
+  border-color: rgba(32, 32, 32, 0.45);
+  color: rgba(32, 32, 32, 0.75);
 }
 
 .raffle-theme-vol13 .raffle-status {
-  color: rgba(22, 20, 18, 0.65);
+  color: rgba(32, 32, 32, 0.7);
 }
 
 .raffle-theme-vol13 .raffle-history {
-  border-top-color: rgba(22, 20, 18, 0.18);
+  border-top-color: rgba(32, 32, 32, 0.25);
 }
 
 .raffle-theme-vol13 .raffle-history h4 {
-  color: rgba(22, 20, 18, 0.6);
+  color: rgba(32, 32, 32, 0.6);
 }
 
 .raffle-theme-vol13 .raffle-history-item {
-  background: rgba(255, 255, 255, 0.65);
-  border-color: rgba(22, 20, 18, 0.25);
-  color: #161412;
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(32, 32, 32, 0.4);
+  color: #202020;
+}
+
+/* Treasure chest reveal — 15-frame sprite strip, plays once on winner,
+   then twinkles between the last two frames. */
+.raffle-chest-stage {
+  --chest-w: 288px;
+  --chest-h: 320px;
+  width: var(--chest-w);
+  height: var(--chest-h);
+  margin: 4px auto 12px;
+  border-radius: 14px;
+  border: 1px solid #202020;
+  background-color: #1b1d20;
+  background-image: url('/raffle-treasure-vol13.png?v=20260827');
+  background-repeat: no-repeat;
+  background-size: calc(var(--chest-w) * 15) var(--chest-h);
+  background-position: 0 0;
+  box-shadow: 0 14px 34px rgba(32, 32, 32, 0.35);
+}
+
+.raffle-chest-stage.playing {
+  animation: chestOpen 1.4s steps(14, end) forwards;
+}
+
+.raffle-chest-stage.done {
+  animation: chestTwinkle 0.9s steps(1, end) infinite;
+}
+
+@keyframes chestOpen {
+  from { background-position: 0 0; }
+  to { background-position: calc(var(--chest-w) * -14) 0; }
+}
+
+@keyframes chestTwinkle {
+  0%, 100% { background-position: calc(var(--chest-w) * -14) 0; }
+  50% { background-position: calc(var(--chest-w) * -13) 0; }
+}
+
+@media (max-width: 560px) {
+  .raffle-chest-stage {
+    --chest-w: 216px;
+    --chest-h: 240px;
+  }
+
+  .vol13-header {
+    flex-direction: column;
+    gap: 12px;
+  }
 }
 
 .raffle-confetti {
@@ -6033,9 +6183,22 @@ const RAFFLE_HISTORY_LIMIT = 8;
 const RAFFLE_SPIN_DURATION_MS = 8000;
 const RAFFLE_DRUM_ROLL_SRC = '/raffle-drum-roll-v2.mp3?v=20260327a';
 // Per-volume raffle skins. Key = event key from discovery; add new volumes here.
+// `chest: true` plays the treasure-chest sprite reveal when a winner lands.
 const RAFFLE_EVENT_THEMES = {
-  vol13: { shellClass: 'raffle-theme-vol13', eventPill: 'Vol. XIII @ Stan' },
+  vol13: {
+    shellClass: 'raffle-theme-vol13',
+    bodyClass: 'vol13-raffle-page',
+    eventPill: 'Vol. XIII @ Stan',
+    chest: true,
+    confettiColors: ['#ec9ea7', '#6454ff', '#202020', '#ffffff'],
+  },
 };
+const RAFFLE_CHEST_SPRITE_SRC = '/raffle-treasure-vol13.png?v=20260827';
+const RAFFLE_CHEST_REVEAL_MS = 1500;
+
+function getActiveRaffleTheme() {
+  return RAFFLE_EVENT_THEMES[activeEventKey] || null;
+}
 const raffleState = {
   spinning: false,
   displayedName: '',
@@ -6045,6 +6208,8 @@ const raffleState = {
   winnerHistory: [],
   spinTimerId: null,
   confettiTimerId: null,
+  chestPhase: '', // '' | 'playing' | 'done' — themed treasure reveal
+  chestTimerId: null,
 };
 const raffleAudioState = {
   rollAudio: null,
@@ -6246,6 +6411,10 @@ function clearRaffleTimers() {
     window.clearTimeout(raffleState.confettiTimerId);
     raffleState.confettiTimerId = null;
   }
+  if (raffleState.chestTimerId) {
+    window.clearTimeout(raffleState.chestTimerId);
+    raffleState.chestTimerId = null;
+  }
   stopRaffleDrumRoll();
 }
 
@@ -6266,7 +6435,8 @@ function launchRaffleConfetti() {
   const confettiRoot = document.getElementById('raffleConfetti');
   if (!confettiRoot) return;
 
-  const colors = ['#c8ff00', '#ff3d8e', '#3d8eff', '#3dff8e', '#ff8e3d'];
+  const theme = getActiveRaffleTheme();
+  const colors = (theme && theme.confettiColors) || ['#c8ff00', '#ff3d8e', '#3d8eff', '#3dff8e', '#ff8e3d'];
   const pieces = Array.from({ length: 28 }).map(() => {
     const x = `${secureRandomInt(100)}%`;
     const rotate = `${secureRandomInt(360)}deg`;
@@ -6287,15 +6457,31 @@ function finalizeRaffleSpin(winnerName) {
   const winner = String(winnerName || '').trim();
   raffleState.spinning = false;
   raffleState.lastWinner = winner;
-  raffleState.statusMessage = winner
-    ? `${winner} wins this round.`
-    : 'Unable to select a winner.';
 
   if (winner) {
     raffleState.excludedWinners.add(normalizeKey(winner));
     raffleState.winnerHistory.unshift(winner);
     raffleState.winnerHistory = raffleState.winnerHistory.slice(0, RAFFLE_HISTORY_LIMIT);
   }
+
+  const theme = getActiveRaffleTheme();
+  if (winner && theme && theme.chest) {
+    // Themed reveal: play the treasure chest sprite, then show the name.
+    raffleState.chestPhase = 'playing';
+    raffleState.statusMessage = 'Opening the chest...';
+    renderRaffle();
+    raffleState.chestTimerId = window.setTimeout(() => {
+      raffleState.chestPhase = 'done';
+      raffleState.statusMessage = `${winner} wins this round.`;
+      renderRaffle();
+      launchRaffleConfetti();
+    }, RAFFLE_CHEST_REVEAL_MS);
+    return;
+  }
+
+  raffleState.statusMessage = winner
+    ? `${winner} wins this round.`
+    : 'Unable to select a winner.';
 
   renderRaffle();
   launchRaffleConfetti();
@@ -6313,6 +6499,7 @@ async function startRaffleSpin() {
 
   clearRaffleTimers();
   raffleState.spinning = true;
+  raffleState.chestPhase = '';
   raffleState.statusMessage = `Spinning through ${pool.length} attendees...`;
   const rollStarted = await startRaffleDrumRoll();
   if (!rollStarted) {
@@ -6352,6 +6539,7 @@ async function startRaffleSpin() {
 function resetRafflePool() {
   clearRaffleTimers();
   raffleState.spinning = false;
+  raffleState.chestPhase = '';
   raffleState.excludedWinners.clear();
   raffleState.winnerHistory = [];
   raffleState.lastWinner = '';
@@ -6383,12 +6571,36 @@ function renderRaffle() {
       ? 'Live attendees synced from Luma are in this raffle.'
       : 'Live sync was unavailable, so this raffle is using backup guest data.';
 
-  app.innerHTML = `
+  document.body.classList.toggle('vol13-raffle-page', !!(raffleTheme && raffleTheme.bodyClass === 'vol13-raffle-page'));
+
+  if (raffleTheme && raffleTheme.chest && !renderRaffle.chestPreloaded) {
+    renderRaffle.chestPreloaded = true;
+    new Image().src = RAFFLE_CHEST_SPRITE_SRC;
+  }
+
+  const chestPhase = (raffleTheme && raffleTheme.chest && raffleState.chestPhase) || '';
+  const headerHtml = raffleTheme
+    ? `
+    <div class="vol13-header">
+      <div class="vol13-wordmark">Ctrl+<br>Shift</div>
+      <div class="vol13-microcopy">A creative tech community in Toronto Canada and the world</div>
+    </div>
+    <div class="vol13-meta-row">
+      <span><span class="accent">Vol. XIII</span> @ Stan</span>
+      <span>28 August 2026 · 6–9PM</span>
+      <span>100 Queens Quay E, Toronto</span>
+      <span class="accent">Raffle</span>
+    </div>
+    <p class="vol13-subtitle">${subtitle}</p>`
+    : `
     <div class="header">
       <div class="header-label">${getHeaderLabel()}</div>
       <h1>Event <span class="highlight">Raffle</span></h1>
       <p class="subtitle">${subtitle}</p>
-    </div>
+    </div>`;
+
+  app.innerHTML = `
+    ${headerHtml}
     <div class="raffle-shell${raffleTheme ? ` ${raffleTheme.shellClass}` : ''}">
       <button class="back-btn" onclick="closeRaffleRoute()">← Back</button>
       <div class="raffle-card">
@@ -6399,9 +6611,10 @@ function renderRaffle() {
         </div>
         <div class="raffle-display" aria-live="polite">
           <div>
-            <div class="raffle-display-label">Current pick</div>
-            <div class="raffle-name" id="raffleName">${displayedName || 'Waiting for spin...'}</div>
-            <div class="raffle-winner-badge" id="raffleWinnerBadge">${raffleState.lastWinner && !raffleState.spinning ? 'Winner Selected' : ''}</div>
+            ${chestPhase ? `<div class="raffle-chest-stage ${chestPhase}"></div>` : ''}
+            <div class="raffle-display-label">${chestPhase === 'playing' ? 'Opening the chest…' : 'Current pick'}</div>
+            <div class="raffle-name" id="raffleName"${chestPhase === 'playing' ? ' style="visibility:hidden"' : ''}>${displayedName || 'Waiting for spin...'}</div>
+            <div class="raffle-winner-badge" id="raffleWinnerBadge">${raffleState.lastWinner && !raffleState.spinning && chestPhase !== 'playing' ? 'Winner Selected' : ''}</div>
           </div>
           <div class="raffle-confetti" id="raffleConfetti"></div>
         </div>
