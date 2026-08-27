@@ -687,6 +687,104 @@ body {
   background: var(--surface-2);
 }
 
+/* Vol. XIII @ Stan raffle theme — cream ground, pink numerals, ink type,
+   Stan purple accent, lifted from the vol 13 poster. */
+.raffle-theme-vol13 .raffle-card {
+  background: #efe9de;
+  border-color: rgba(22, 20, 18, 0.18);
+}
+
+.raffle-theme-vol13 .raffle-card::before {
+  background: linear-gradient(90deg, #e89aac, #6a4df4, #161412);
+}
+
+.raffle-theme-vol13 .raffle-meta-pill {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(22, 20, 18, 0.25);
+  color: rgba(22, 20, 18, 0.8);
+}
+
+.raffle-theme-vol13 .raffle-meta-pill.live {
+  border-color: rgba(106, 77, 244, 0.45);
+  color: #6a4df4;
+}
+
+.raffle-theme-vol13 .raffle-meta-pill.fallback {
+  border-color: rgba(179, 84, 30, 0.45);
+  color: #b3541e;
+}
+
+.raffle-theme-vol13 .raffle-display {
+  border-color: #e89aac;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(232, 154, 172, 0.35), rgba(0, 0, 0, 0) 50%),
+    radial-gradient(circle at 88% 90%, rgba(106, 77, 244, 0.14), rgba(0, 0, 0, 0) 45%),
+    #f6f1e7;
+}
+
+.raffle-theme-vol13 .raffle-display::after {
+  content: 'XIII';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(4rem, 16vw, 7rem);
+  letter-spacing: -0.05em;
+  color: #e89aac;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.raffle-theme-vol13 .raffle-display > div {
+  position: relative;
+  z-index: 1;
+}
+
+.raffle-theme-vol13 .raffle-display-label {
+  color: rgba(22, 20, 18, 0.6);
+}
+
+.raffle-theme-vol13 .raffle-name {
+  color: #161412;
+}
+
+.raffle-theme-vol13 .raffle-winner-badge {
+  color: #6a4df4;
+}
+
+.raffle-theme-vol13 .raffle-btn.primary {
+  background: #161412;
+  border-color: #161412;
+  color: #efe9de;
+}
+
+.raffle-theme-vol13 .raffle-btn.secondary {
+  background: transparent;
+  border-color: rgba(22, 20, 18, 0.3);
+  color: rgba(22, 20, 18, 0.65);
+}
+
+.raffle-theme-vol13 .raffle-status {
+  color: rgba(22, 20, 18, 0.65);
+}
+
+.raffle-theme-vol13 .raffle-history {
+  border-top-color: rgba(22, 20, 18, 0.18);
+}
+
+.raffle-theme-vol13 .raffle-history h4 {
+  color: rgba(22, 20, 18, 0.6);
+}
+
+.raffle-theme-vol13 .raffle-history-item {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(22, 20, 18, 0.25);
+  color: #161412;
+}
+
 .raffle-confetti {
   position: absolute;
   inset: 0;
@@ -5934,6 +6032,10 @@ let liveStatusMessage = 'Initializing event data...';
 const RAFFLE_HISTORY_LIMIT = 8;
 const RAFFLE_SPIN_DURATION_MS = 8000;
 const RAFFLE_DRUM_ROLL_SRC = '/raffle-drum-roll-v2.mp3?v=20260327a';
+// Per-volume raffle skins. Key = event key from discovery; add new volumes here.
+const RAFFLE_EVENT_THEMES = {
+  vol13: { shellClass: 'raffle-theme-vol13', eventPill: 'Vol. XIII @ Stan' },
+};
 const raffleState = {
   spinning: false,
   displayedName: '',
@@ -6274,6 +6376,8 @@ function renderRaffle() {
   const spinLabel = raffleState.spinning ? 'Spinning...' : raffleState.lastWinner ? 'Spin Again' : 'Start Spin';
   const sourceClass = activeDataSource === 'live' ? 'live' : 'fallback';
   const sourceLabel = activeDataSource === 'live' ? 'Live Luma attendees' : 'Fallback attendee list';
+  const raffleTheme = RAFFLE_EVENT_THEMES[activeEventKey] || null;
+  const eventPillLabel = (raffleTheme && raffleTheme.eventPill) || activeEventLabel;
   const subtitle =
     activeDataSource === 'live'
       ? 'Live attendees synced from Luma are in this raffle.'
@@ -6285,12 +6389,12 @@ function renderRaffle() {
       <h1>Event <span class="highlight">Raffle</span></h1>
       <p class="subtitle">${subtitle}</p>
     </div>
-    <div class="raffle-shell">
+    <div class="raffle-shell${raffleTheme ? ` ${raffleTheme.shellClass}` : ''}">
       <button class="back-btn" onclick="closeRaffleRoute()">← Back</button>
       <div class="raffle-card">
         <div class="raffle-metadata">
           <span class="raffle-meta-pill ${sourceClass}">${sourceLabel}</span>
-          <span class="raffle-meta-pill">${activeEventLabel}</span>
+          <span class="raffle-meta-pill">${eventPillLabel}</span>
           <span class="raffle-meta-pill">${remainingCount}/${eligibleCount} remaining</span>
         </div>
         <div class="raffle-display" aria-live="polite">
@@ -7018,10 +7122,10 @@ function renderArchiveGate() {
             <div class="unlock-error" id="unlockError"></div>
           </form>
         </div>
-        <a class="status-card status-link vol11" href="?event=vol11">
+        <a class="status-card status-link" href="/">
           <div class="status-label">● Live</div>
-          <h3>CTRL SHIFT Vol. 11</h3>
-          <p>The current volume is live. Go to the active matchmaking page.</p>
+          <h3>Current Volume</h3>
+          <p>Head back to the event hub for the active matchmaking page.</p>
         </a>
       </div>
     </div>

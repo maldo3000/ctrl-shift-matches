@@ -108,10 +108,33 @@ function parseJsonObject(value) {
   }
 }
 
+const ROMAN_DIGIT_VALUES = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+
+function romanToNumber(value) {
+  const text = String(value || '').toLowerCase();
+  if (!/^[mdclxvi]+$/.test(text)) return 0;
+  let total = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const current = ROMAN_DIGIT_VALUES[text[i]];
+    const next = ROMAN_DIGIT_VALUES[text[i + 1]] || 0;
+    total += current < next ? -current : current;
+  }
+  return total;
+}
+
 function extractVolumeNumber(value) {
   const text = String(value || '');
   const match = text.match(/\bvol(?:ume)?\s*[\.\- ]?\s*(\d+)\b/i);
-  return match ? String(match[1]) : '';
+  if (match) return String(match[1]);
+
+  // Some volumes are titled with Roman numerals (e.g. "VOL. XIII @ Stan").
+  const roman = text.match(/\bvol(?:ume)?\s*[\.\- ]?\s*([mdclxvi]+)\b/i);
+  if (roman) {
+    const number = romanToNumber(roman[1]);
+    if (number > 0) return String(number);
+  }
+
+  return '';
 }
 
 function formatEventLabel(raw) {
@@ -1051,3 +1074,4 @@ module.exports.getDiscoveredEvents = getDiscoveredEvents;
 module.exports.pickCurrentEventKey = pickCurrentEventKey;
 module.exports.buildDynamicMaps = buildDynamicMaps;
 module.exports.fetchCalendarEvents = fetchCalendarEvents;
+module.exports.extractVolumeNumber = extractVolumeNumber;
