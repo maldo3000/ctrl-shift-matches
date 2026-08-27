@@ -887,30 +887,34 @@ body.vol13-raffle-page .footer {
   color: #202020;
 }
 
-/* Treasure chest reveal — 15-frame sprite strip, plays once on winner,
-   then twinkles between the last two frames. */
+/* Treasure chest reveal — transparent 15-frame sprite strip, pops in,
+   plays once, then twinkles between the last two frames. */
 .raffle-chest-stage {
   --chest-w: 288px;
   --chest-h: 320px;
   width: var(--chest-w);
   height: var(--chest-h);
-  margin: 4px auto 12px;
-  border-radius: 14px;
-  border: 1px solid #202020;
-  background-color: #1b1d20;
-  background-image: url('/raffle-treasure-vol13.png?v=20260827');
+  margin: 0 auto 4px;
+  background-image: url('/raffle-treasure-vol13.png?v=20260827b');
   background-repeat: no-repeat;
   background-size: calc(var(--chest-w) * 15) var(--chest-h);
   background-position: 0 0;
-  box-shadow: 0 14px 34px rgba(32, 32, 32, 0.35);
+  filter: drop-shadow(0 18px 22px rgba(32, 32, 32, 0.3));
 }
 
 .raffle-chest-stage.playing {
-  animation: chestOpen 1.4s steps(14, end) forwards;
+  animation:
+    chestPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    chestOpen 1.4s steps(14, end) forwards;
 }
 
 .raffle-chest-stage.done {
   animation: chestTwinkle 0.9s steps(1, end) infinite;
+}
+
+@keyframes chestPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes chestOpen {
@@ -921,6 +925,35 @@ body.vol13-raffle-page .footer {
 @keyframes chestTwinkle {
   0%, 100% { background-position: calc(var(--chest-w) * -14) 0; }
   50% { background-position: calc(var(--chest-w) * -13) 0; }
+}
+
+.raffle-theme-vol13 .raffle-name.reveal-pop {
+  animation: namePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes namePop {
+  from { transform: scale(0.55); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Richer confetti used by themed reveals — per-piece size, shape,
+   sideways drift and spin come in as inline custom properties. */
+.raffle-confetti-piece.rich {
+  animation-name: confettiDropRich;
+}
+
+@keyframes confettiDropRich {
+  0% {
+    transform: translate3d(0, -24px, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--dx, 0px), 340px, 0) rotate(var(--rr, 540deg));
+    opacity: 0;
+  }
 }
 
 @media (max-width: 560px) {
@@ -6193,7 +6226,7 @@ const RAFFLE_EVENT_THEMES = {
     confettiColors: ['#ec9ea7', '#6454ff', '#202020', '#ffffff'],
   },
 };
-const RAFFLE_CHEST_SPRITE_SRC = '/raffle-treasure-vol13.png?v=20260827';
+const RAFFLE_CHEST_SPRITE_SRC = '/raffle-treasure-vol13.png?v=20260827b';
 const RAFFLE_CHEST_REVEAL_MS = 1500;
 
 function getActiveRaffleTheme() {
@@ -6437,18 +6470,31 @@ function launchRaffleConfetti() {
 
   const theme = getActiveRaffleTheme();
   const colors = (theme && theme.confettiColors) || ['#c8ff00', '#ff3d8e', '#3d8eff', '#3dff8e', '#ff8e3d'];
-  const pieces = Array.from({ length: 28 }).map(() => {
+  const count = theme ? 64 : 28;
+  const pieces = Array.from({ length: count }).map(() => {
     const x = `${secureRandomInt(100)}%`;
     const rotate = `${secureRandomInt(360)}deg`;
-    const delay = `${secureRandomInt(350)}ms`;
     const color = colors[secureRandomInt(colors.length)];
-    return `<span class="raffle-confetti-piece" style="--x:${x};--r:${rotate};--d:${delay};--color:${color}"></span>`;
+
+    if (!theme) {
+      const delay = `${secureRandomInt(350)}ms`;
+      return `<span class="raffle-confetti-piece" style="--x:${x};--r:${rotate};--d:${delay};--color:${color}"></span>`;
+    }
+
+    // Themed reveal: mixed sizes and shapes, sideways drift, staggered bursts.
+    const delay = `${secureRandomInt(650)}ms`;
+    const size = 6 + secureRandomInt(9);
+    const round = secureRandomInt(3) === 0;
+    const dx = secureRandomInt(180) - 90;
+    const spin = 360 + secureRandomInt(540);
+    const duration = 1500 + secureRandomInt(1100);
+    return `<span class="raffle-confetti-piece rich" style="--x:${x};--r:${rotate};--d:${delay};--color:${color};--dx:${dx}px;--rr:${spin}deg;width:${size}px;height:${round ? size : Math.round(size * 1.6)}px;${round ? 'border-radius:50%;' : ''}animation-duration:${duration}ms"></span>`;
   });
 
   confettiRoot.innerHTML = pieces.join('');
   raffleState.confettiTimerId = window.setTimeout(() => {
     if (confettiRoot) confettiRoot.innerHTML = '';
-  }, 1800);
+  }, theme ? 3400 : 1800);
 }
 
 function finalizeRaffleSpin(winnerName) {
@@ -6613,7 +6659,7 @@ function renderRaffle() {
           <div>
             ${chestPhase ? `<div class="raffle-chest-stage ${chestPhase}"></div>` : ''}
             <div class="raffle-display-label">${chestPhase === 'playing' ? 'Opening the chest…' : 'Current pick'}</div>
-            <div class="raffle-name" id="raffleName"${chestPhase === 'playing' ? ' style="visibility:hidden"' : ''}>${displayedName || 'Waiting for spin...'}</div>
+            <div class="raffle-name${chestPhase === 'done' ? ' reveal-pop' : ''}" id="raffleName"${chestPhase === 'playing' ? ' style="visibility:hidden"' : ''}>${displayedName || 'Waiting for spin...'}</div>
             <div class="raffle-winner-badge" id="raffleWinnerBadge">${raffleState.lastWinner && !raffleState.spinning && chestPhase !== 'playing' ? 'Winner Selected' : ''}</div>
           </div>
           <div class="raffle-confetti" id="raffleConfetti"></div>
