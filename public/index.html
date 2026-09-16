@@ -723,38 +723,46 @@ body.vol13-raffle-page .footer {
   color: rgba(32, 32, 32, 0.6);
 }
 
-.vol13-header {
+/* Shared themed-raffle header lockup. Each theme's body class sets the
+   palette vars: --rt-ink (type), --rt-accent, --rt-dim (secondary text). */
+body.vol13-raffle-page {
+  --rt-ink: #202020;
+  --rt-accent: #6454ff;
+  --rt-dim: rgba(32, 32, 32, 0.65);
+}
+
+.rtheme-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 20px;
-  color: #202020;
+  color: var(--rt-ink);
   animation: fadeUp 0.35s ease both;
 }
 
-.vol13-wordmark {
+.rtheme-wordmark {
   font-family: 'Archivo', 'Helvetica Neue', sans-serif;
   font-weight: 900;
   font-size: clamp(3.2rem, 10vw, 5.6rem);
   line-height: 0.84;
   letter-spacing: -0.04em;
   text-transform: uppercase;
-  color: #202020;
+  color: var(--rt-ink);
 }
 
-.vol13-microcopy {
+.rtheme-microcopy {
   font-family: 'Space Mono', monospace;
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   line-height: 1.8;
-  color: #202020;
+  color: var(--rt-ink);
   max-width: 230px;
   text-align: left;
   padding-top: 6px;
 }
 
-.vol13-meta-row {
+.rtheme-meta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 24px;
@@ -762,21 +770,21 @@ body.vol13-raffle-page .footer {
   font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #202020;
+  color: var(--rt-ink);
   margin: 18px 0 6px;
-  border-top: 2px solid #202020;
+  border-top: 2px solid var(--rt-ink);
   padding-top: 12px;
 }
 
-.vol13-meta-row .accent {
-  color: #6454ff;
+.rtheme-meta-row .accent {
+  color: var(--rt-accent);
   font-weight: 700;
 }
 
-.vol13-subtitle {
+.rtheme-subtitle {
   font-family: 'Space Mono', monospace;
   font-size: 0.66rem;
-  color: rgba(32, 32, 32, 0.65);
+  color: var(--rt-dim);
   margin: 0 0 22px;
 }
 
@@ -887,6 +895,157 @@ body.vol13-raffle-page .footer {
   color: #202020;
 }
 
+/* ============================================================
+   Vol. XIV @ Ambition raffle — vol 14 poster palette: royal blue
+   #1e1ec8 blueprint ground, white ink type, periwinkle #9d9df2
+   accent, faint white grid + giant XIV numerals.
+   ============================================================ */
+body.vol14-raffle-page {
+  --rt-ink: #ffffff;
+  --rt-accent: #9d9df2;
+  --rt-dim: rgba(255, 255, 255, 0.7);
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 44px),
+    #1e1ec8;
+}
+
+body.vol14-raffle-page::before {
+  content: 'XIV';
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Archivo', 'Helvetica Neue', sans-serif;
+  font-weight: 900;
+  font-size: min(52vw, 36rem);
+  letter-spacing: -0.06em;
+  color: rgba(255, 255, 255, 0.07);
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+body.vol14-raffle-page .container {
+  position: relative;
+  z-index: 1;
+}
+
+body.vol14-raffle-page .footer {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.raffle-theme-vol14 .back-btn {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+}
+
+.raffle-theme-vol14 .raffle-card {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+.raffle-theme-vol14 .raffle-card::before {
+  background: linear-gradient(90deg, #9d9df2, #ffffff, #0d0d70);
+}
+
+.raffle-theme-vol14 .raffle-meta-pill {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.raffle-theme-vol14 .raffle-meta-pill.live {
+  border-color: #9d9df2;
+  color: #b9b9ff;
+}
+
+.raffle-theme-vol14 .raffle-meta-pill.fallback {
+  border-color: rgba(255, 179, 107, 0.7);
+  color: #ffb36b;
+}
+
+.raffle-theme-vol14 .raffle-display {
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(157, 157, 242, 0.25), rgba(0, 0, 0, 0) 50%),
+    radial-gradient(circle at 88% 90%, rgba(13, 13, 112, 0.5), rgba(0, 0, 0, 0) 45%),
+    rgba(13, 13, 112, 0.3);
+}
+
+.raffle-theme-vol14 .raffle-display::after {
+  content: 'XIV';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Archivo', 'Helvetica Neue', sans-serif;
+  font-weight: 900;
+  font-size: clamp(4rem, 16vw, 7rem);
+  letter-spacing: -0.05em;
+  color: rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+}
+
+.raffle-theme-vol14 .raffle-display > div:first-child {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.raffle-theme-vol14 .raffle-display-label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.raffle-theme-vol14 .raffle-name {
+  font-family: 'Archivo', 'Helvetica Neue', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.raffle-theme-vol14 .raffle-winner-badge {
+  color: #b9b9ff;
+}
+
+.raffle-theme-vol14 .raffle-btn.primary {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #1e1ec8;
+}
+
+.raffle-theme-vol14 .raffle-btn.secondary {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.raffle-theme-vol14 .raffle-status {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.raffle-theme-vol14 .raffle-history {
+  border-top-color: rgba(255, 255, 255, 0.3);
+}
+
+.raffle-theme-vol14 .raffle-history h4 {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.raffle-theme-vol14 .raffle-history-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #ffffff;
+}
+
+.raffle-theme-vol14 .raffle-chest-stage {
+  filter: drop-shadow(0 18px 22px rgba(6, 6, 60, 0.55));
+}
+
 /* Treasure chest reveal — transparent 15-frame sprite strip, pops in,
    plays once, then twinkles between the last two frames. */
 .raffle-chest-stage {
@@ -927,7 +1086,7 @@ body.vol13-raffle-page .footer {
   50% { background-position: calc(var(--chest-w) * -13) 0; }
 }
 
-.raffle-theme-vol13 .raffle-name.reveal-pop {
+.raffle-name.reveal-pop {
   animation: namePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -962,7 +1121,7 @@ body.vol13-raffle-page .footer {
     --chest-h: 225px;
   }
 
-  .vol13-header {
+  .rtheme-header {
     flex-direction: column;
     gap: 12px;
   }
@@ -6224,6 +6383,17 @@ const RAFFLE_EVENT_THEMES = {
     eventPill: 'Vol. XIII @ Stan',
     chest: true,
     confettiColors: ['#ec9ea7', '#6454ff', '#202020', '#ffffff'],
+    microcopy: 'A creative tech community in Toronto Canada and the world',
+    headerMeta: '<span><span class="accent">Vol. XIII</span> @ Stan</span><span>28 August 2026 · 6–9PM</span><span>100 Queens Quay E, Toronto</span><span class="accent">Raffle</span>',
+  },
+  vol14: {
+    shellClass: 'raffle-theme-vol14',
+    bodyClass: 'vol14-raffle-page',
+    eventPill: 'Vol. XIV @ Ambition',
+    chest: true,
+    confettiColors: ['#ffffff', '#9d9df2', '#0d0d70', '#4848c8'],
+    microcopy: 'A creative tech community in Toronto Canada and the world',
+    headerMeta: '<span><span class="accent">Vol. XIV</span> @ Ambition</span><span>September 18, 2026 · 7PM</span><span>74 Fraser Ave, Toronto</span><span class="accent">Raffle</span>',
   },
 };
 const RAFFLE_CHEST_SPRITE_SRC = '/raffle-treasure-vol13.png?v=20260827c';
@@ -6617,7 +6787,10 @@ function renderRaffle() {
       ? 'Live attendees synced from Luma are in this raffle.'
       : 'Live sync was unavailable, so this raffle is using backup guest data.';
 
-  document.body.classList.toggle('vol13-raffle-page', !!(raffleTheme && raffleTheme.bodyClass === 'vol13-raffle-page'));
+  Object.values(RAFFLE_EVENT_THEMES).forEach((theme) => {
+    if (!theme.bodyClass) return;
+    document.body.classList.toggle(theme.bodyClass, !!(raffleTheme && raffleTheme.bodyClass === theme.bodyClass));
+  });
 
   if (raffleTheme && raffleTheme.chest && !renderRaffle.chestPreloaded) {
     renderRaffle.chestPreloaded = true;
@@ -6627,17 +6800,12 @@ function renderRaffle() {
   const chestPhase = (raffleTheme && raffleTheme.chest && raffleState.chestPhase) || '';
   const headerHtml = raffleTheme
     ? `
-    <div class="vol13-header">
-      <div class="vol13-wordmark">Ctrl+<br>Shift</div>
-      <div class="vol13-microcopy">A creative tech community in Toronto Canada and the world</div>
+    <div class="rtheme-header">
+      <div class="rtheme-wordmark">Ctrl+<br>Shift</div>
+      <div class="rtheme-microcopy">${raffleTheme.microcopy || ''}</div>
     </div>
-    <div class="vol13-meta-row">
-      <span><span class="accent">Vol. XIII</span> @ Stan</span>
-      <span>28 August 2026 · 6–9PM</span>
-      <span>100 Queens Quay E, Toronto</span>
-      <span class="accent">Raffle</span>
-    </div>
-    <p class="vol13-subtitle">${subtitle}</p>`
+    <div class="rtheme-meta-row">${raffleTheme.headerMeta || ''}</div>
+    <p class="rtheme-subtitle">${subtitle}</p>`
     : `
     <div class="header">
       <div class="header-label">${getHeaderLabel()}</div>
