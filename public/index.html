@@ -1121,6 +1121,199 @@ body.vol14-raffle-page .rtheme-subtitle {
   letter-spacing: 0.16em;
 }
 
+/* Live attendee count + manual Luma refresh, top of the raffle card. */
+.raffle-attendees {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  padding: 0 0 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.raffle-attendees-count {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.raffle-attendees-number {
+  font-family: 'Archivo', 'Syne', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2.6rem, 8vw, 3.6rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.raffle-attendees-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+
+.raffle-attendees-meta {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.raffle-attendees-note {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.raffle-attendees.has-error .raffle-attendees-note {
+  color: #ffbf8e;
+}
+
+.raffle-attendees-delta {
+  align-self: flex-start;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.raffle-attendees-delta.up {
+  border-color: #3dff8e;
+  color: #3dff8e;
+}
+
+.raffle-attendees-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.raffle-attendees-refresh:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.raffle-attendees-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.raffle-attendees-refresh-icon {
+  display: inline-block;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.raffle-attendees-refresh-icon.spinning {
+  animation: raffleRefreshSpin 0.8s linear infinite;
+}
+
+@keyframes raffleRefreshSpin {
+  to { transform: rotate(360deg); }
+}
+
+.raffle-theme-vol14 .raffle-attendees {
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.raffle-theme-vol14 .raffle-attendees-number {
+  color: #ffffff;
+}
+
+.raffle-theme-vol14 .raffle-attendees-label,
+.raffle-theme-vol14 .raffle-attendees-note,
+.raffle-theme-vol14 .raffle-attendees-delta,
+.raffle-theme-vol14 .raffle-attendees-refresh {
+  font-family: var(--rt-sans);
+  font-weight: 200;
+}
+
+.raffle-theme-vol14 .raffle-attendees-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.raffle-theme-vol14 .raffle-attendees-note {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.raffle-theme-vol14 .raffle-attendees.has-error .raffle-attendees-note {
+  color: #ffb36b;
+}
+
+.raffle-theme-vol14 .raffle-attendees-delta {
+  font-size: 0.72rem;
+  border-color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.raffle-theme-vol14 .raffle-attendees-delta.up {
+  font-weight: 400;
+  border-color: #ffffff;
+  background: #ffffff;
+  color: #1e1ec8;
+}
+
+.raffle-theme-vol14 .raffle-attendees-refresh {
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #ffffff;
+}
+
+.raffle-theme-vol13 .raffle-attendees {
+  border-bottom-color: rgba(32, 32, 32, 0.25);
+}
+
+.raffle-theme-vol13 .raffle-attendees-number {
+  color: #202020;
+}
+
+.raffle-theme-vol13 .raffle-attendees-label,
+.raffle-theme-vol13 .raffle-attendees-note {
+  color: rgba(32, 32, 32, 0.7);
+}
+
+.raffle-theme-vol13 .raffle-attendees.has-error .raffle-attendees-note {
+  color: #a34a18;
+}
+
+.raffle-theme-vol13 .raffle-attendees-delta {
+  border-color: rgba(32, 32, 32, 0.4);
+  color: rgba(32, 32, 32, 0.75);
+}
+
+.raffle-theme-vol13 .raffle-attendees-delta.up {
+  border-color: #6454ff;
+  background: #6454ff;
+  color: #ffffff;
+}
+
+.raffle-theme-vol13 .raffle-attendees-refresh {
+  border-color: rgba(32, 32, 32, 0.45);
+  color: #202020;
+}
+
+.raffle-theme-vol13 .raffle-attendees-refresh:not(:disabled):hover {
+  background: rgba(32, 32, 32, 0.06);
+}
+
 /* Treasure chest reveal — transparent 15-frame sprite strip, pops in,
    plays once, then twinkles between the last two frames. */
 .raffle-chest-stage {
@@ -6492,6 +6685,12 @@ const raffleState = {
 const raffleAudioState = {
   rollAudio: null,
 };
+const raffleSyncState = {
+  syncedAt: null,     // ISO time the server pulled the guest list from Luma
+  refreshing: false,
+  lastDelta: null,    // attendee change from the most recent manual refresh
+  error: '',
+};
 const SOCIAL_META = {
   linkedin: { label: 'LinkedIn', icon: 'in' },
   github: { label: 'GitHub', icon: 'GH' },
@@ -6839,6 +7038,89 @@ function resetRafflePool() {
   renderRaffle();
 }
 
+// Re-pull the guest list from Luma without touching drawn winners — they stay
+// excluded by name, so new signups join the pool mid-raffle.
+async function refreshRaffleAttendees() {
+  if (raffleSyncState.refreshing || raffleState.spinning || raffleState.chestPhase === 'playing') return;
+
+  const before = getRaffleEligibleGuests().length;
+  raffleSyncState.refreshing = true;
+  raffleSyncState.error = '';
+  renderRaffle();
+
+  try {
+    const url = new URL(LIVE_API_ENDPOINT, window.location.origin);
+    url.searchParams.set('fresh', '1');
+    if (SOURCE_MODE === 'live') url.searchParams.set('mode', 'live');
+    if (EVENT_PARAM) url.searchParams.set('event', EVENT_PARAM);
+    if (EVENT_API_ID_PARAM) url.searchParams.set('event_api_id', EVENT_API_ID_PARAM);
+    if (EVENT_ID_PARAM) url.searchParams.set('event_id', EVENT_ID_PARAM);
+
+    const response = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      throw new Error((payload && payload.error) || `HTTP ${response.status}`);
+    }
+    if (!payload || !payload.guests || !Object.keys(payload.guests).length) {
+      throw new Error('Luma returned no guests');
+    }
+
+    setActiveGuests(payload.guests);
+    activeDataSource = 'live';
+    raffleSyncState.syncedAt = payload.generated_at || new Date().toISOString();
+    raffleSyncState.lastDelta = getRaffleEligibleGuests().length - before;
+  } catch (error) {
+    raffleSyncState.error = error && error.message ? error.message : 'Refresh failed';
+  } finally {
+    raffleSyncState.refreshing = false;
+    if (isRaffleRoute()) renderRaffle();
+  }
+}
+
+function formatSyncTime(iso) {
+  const date = iso ? new Date(iso) : null;
+  if (!date || Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+}
+
+function buildRaffleAttendeeBar(eligibleCount) {
+  const isLive = activeDataSource === 'live';
+  const syncTime = formatSyncTime(raffleSyncState.syncedAt);
+  const delta = raffleSyncState.lastDelta;
+  const busy = raffleSyncState.refreshing || raffleState.spinning || raffleState.chestPhase === 'playing';
+
+  let note;
+  if (raffleSyncState.refreshing) note = 'Pulling latest from Luma…';
+  else if (raffleSyncState.error) note = `Refresh failed · ${escapeHtml(raffleSyncState.error)}`;
+  else if (isLive && syncTime) note = `Synced from Luma at ${syncTime}`;
+  else note = 'Backup list · not live';
+
+  let deltaHtml = '';
+  if (!raffleSyncState.refreshing && !raffleSyncState.error && delta !== null) {
+    const label = delta > 0 ? `+${delta} new` : delta < 0 ? `${delta} removed` : 'No change';
+    deltaHtml = `<span class="raffle-attendees-delta${delta > 0 ? ' up' : ''}">${label}</span>`;
+  }
+
+  return `
+    <div class="raffle-attendees${raffleSyncState.error ? ' has-error' : ''}">
+      <div class="raffle-attendees-count">
+        <span class="raffle-attendees-number">${eligibleCount}</span>
+        <span class="raffle-attendees-label">Attendees</span>
+      </div>
+      <div class="raffle-attendees-meta">
+        <span class="raffle-attendees-note">${note}</span>
+        ${deltaHtml}
+      </div>
+      <button class="raffle-attendees-refresh" id="raffleRefreshBtn" ${busy ? 'disabled' : ''}>
+        <span class="raffle-attendees-refresh-icon${raffleSyncState.refreshing ? ' spinning' : ''}" aria-hidden="true">↻</span>
+        ${raffleSyncState.refreshing ? 'Refreshing' : 'Refresh list'}
+      </button>
+    </div>`;
+}
+
 function closeRaffle() {
   clearRaffleTimers();
   const url = new URL(window.location);
@@ -6893,6 +7175,7 @@ function renderRaffle() {
     <div class="raffle-shell${raffleTheme ? ` ${raffleTheme.shellClass}` : ''}">
       <button class="back-btn" onclick="closeRaffleRoute()">← Back</button>
       <div class="raffle-card">
+        ${buildRaffleAttendeeBar(eligibleCount)}
         <div class="raffle-metadata">
           <span class="raffle-meta-pill ${sourceClass}">${sourceLabel}</span>
           <span class="raffle-meta-pill">${eventPillLabel}</span>
@@ -6908,7 +7191,7 @@ function renderRaffle() {
           <div class="raffle-confetti" id="raffleConfetti"></div>
         </div>
         <div class="raffle-controls">
-          <button class="raffle-btn primary" id="raffleSpinBtn" ${raffleState.spinning || !remainingCount ? 'disabled' : ''}>
+          <button class="raffle-btn primary" id="raffleSpinBtn" ${raffleState.spinning || raffleSyncState.refreshing || !remainingCount ? 'disabled' : ''}>
             ${spinLabel}
           </button>
           <button class="raffle-btn secondary" id="raffleResetBtn" ${raffleState.spinning ? 'disabled' : ''}>
@@ -6935,6 +7218,8 @@ function renderRaffle() {
   const resetBtn = document.getElementById('raffleResetBtn');
   if (spinBtn) spinBtn.addEventListener('click', startRaffleSpin);
   if (resetBtn) resetBtn.addEventListener('click', resetRafflePool);
+  const refreshBtn = document.getElementById('raffleRefreshBtn');
+  if (refreshBtn) refreshBtn.addEventListener('click', refreshRaffleAttendees);
 }
 
 // ============================================================
@@ -7433,6 +7718,7 @@ async function initializeDataSource() {
 
     setActiveGuests(payload.guests);
     activeDataSource = 'live';
+    raffleSyncState.syncedAt = payload.generated_at || new Date().toISOString();
     activeEventKey = normalizeKey((payload && payload.event_key) || activeEventKey);
     activeEventApiId = (payload && payload.event_api_id) || activeEventApiId;
     activeEventLabel = formatEventLabel((payload && payload.event_label) || EVENT_PARAM || activeEventApiId || EVENT_ID_PARAM);

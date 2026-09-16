@@ -11,8 +11,13 @@ try {
   TITLE_FILTER = /ctrl\s*shift/i;
 }
 
+// `?fresh=1` skips the match cache, but no more than once per this interval
+// so a mashed refresh button can't hammer the Luma API.
+const FRESH_MIN_INTERVAL_MS = 10 * 1000;
+
 const cache = {
   expiresAt: 0,
+  fetchedAt: 0,
   key: '',
   payload: null,
 };
@@ -1035,8 +1040,10 @@ module.exports = async function handler(req, res) {
 
   const cacheKey = `${eventSelection.eventKey || ''}:${eventApiId || eventId}:${approvalStatus}`;
   const now = Date.now();
+  const wantsFresh = ['1', 'true'].includes(normalizeText(query.fresh));
+  const freshAllowed = wantsFresh && now - cache.fetchedAt >= FRESH_MIN_INTERVAL_MS;
 
-  if (cache.payload && cache.key === cacheKey && now < cache.expiresAt) {
+  if (cache.payload && cache.key === cacheKey && now < cache.expiresAt && !freshAllowed) {
     return res.status(200).json(cache.payload);
   }
 
@@ -1052,6 +1059,7 @@ module.exports = async function handler(req, res) {
 
     cache.payload = payload;
     cache.key = cacheKey;
+    cache.fetchedAt = now;
     cache.expiresAt = now + CACHE_TTL_SECONDS * 1000;
 
     return res.status(200).json(payload);
