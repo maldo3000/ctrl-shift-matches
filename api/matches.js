@@ -667,6 +667,37 @@ function isGuestEligible(rawGuest) {
   return Boolean(rawGuest.user_name || rawGuest.user_email || rawGuest.user_api_id || rawGuest.api_id);
 }
 
+// Raffle entries: one per ticket, keyed by guest/ticket id so two people who
+// share a name both stay in the draw. Extra tickets on one registration are
+// the buyer's plus-ones and are labelled "<Name>'s Guest".
+function buildRaffleEntries(rawGuests) {
+  const entries = [];
+  const seenGuests = new Set();
+
+  rawGuests.forEach((rawGuest) => {
+    const guestId = String(rawGuest.api_id || rawGuest.id || rawGuest.user_api_id || '');
+    if (!guestId || seenGuests.has(guestId)) return;
+    seenGuests.add(guestId);
+
+    const name =
+      String(rawGuest.user_name || '').replace(/\s+/g, ' ').trim() ||
+      [rawGuest.user_first_name, rawGuest.user_last_name].filter(Boolean).join(' ').trim() ||
+      'Guest';
+    const tickets = Array.isArray(rawGuest.event_tickets) ? rawGuest.event_tickets : [];
+    const ticketCount = Math.max(tickets.length, 1);
+
+    for (let i = 0; i < ticketCount; i += 1) {
+      const ticketId = tickets[i] && (tickets[i].api_id || tickets[i].id);
+      entries.push({
+        id: String(ticketId || `${guestId}:${i}`),
+        name: i === 0 ? name : `${name}'s Guest${ticketCount > 2 ? ` ${i}` : ''}`,
+      });
+    }
+  });
+
+  return entries;
+}
+
 async function fetchAllGuests({ apiKey, eventApiId, eventId, approvalStatus, paginationLimit = 100 }) {
   const entries = [];
   const seenCursors = new Set();
@@ -975,6 +1006,8 @@ async function loadLiveMatches({ apiKey, eventApiId, eventId, explicitEventKey, 
     event_api_id: eventApiId || null,
     event_id: eventId || null,
     guest_count: Object.keys(guests).length,
+    registration_count: rawGuests.length,
+    raffle_entries: buildRaffleEntries(rawGuests),
     guests,
   };
 }
@@ -1083,3 +1116,4 @@ module.exports.pickCurrentEventKey = pickCurrentEventKey;
 module.exports.buildDynamicMaps = buildDynamicMaps;
 module.exports.fetchCalendarEvents = fetchCalendarEvents;
 module.exports.extractVolumeNumber = extractVolumeNumber;
+module.exports.buildRaffleEntries = buildRaffleEntries;

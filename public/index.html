@@ -6686,9 +6686,7 @@ const raffleAudioState = {
   rollAudio: null,
 };
 const raffleSyncState = {
-  syncedAt: null,     // ISO time the server pulled the guest list from Luma
   refreshing: false,
-  lastDelta: null,    // attendee change from the most recent manual refresh
   error: '',
 };
 const SOCIAL_META = {
@@ -6807,23 +6805,36 @@ function escapeHtml(str) {
   ));
 }
 
+// Per-ticket entries from the live API ({ id, name }), one per Luma ticket.
+// Null when the API didn't send them (backup data), in which case the draw
+// falls back to one entry per unique guest name.
+let raffleApiEntries = null;
+
+function setRaffleApiEntries(payload) {
+  const list = payload && Array.isArray(payload.raffle_entries) ? payload.raffle_entries : null;
+  raffleApiEntries = list && list.length
+    ? list.filter((entry) => entry && entry.id && entry.name).map((entry) => ({ id: String(entry.id), name: String(entry.name) }))
+    : null;
+}
+
 function getRaffleEligibleGuests() {
+  if (raffleApiEntries) return raffleApiEntries;
+
   const seen = new Set();
-  const uniqueNames = [];
+  const entries = [];
 
   guestNames.forEach((name) => {
     const normalized = normalizeKey(name);
     if (!normalized || seen.has(normalized)) return;
     seen.add(normalized);
-    uniqueNames.push(name);
+    entries.push({ id: `name:${normalized}`, name });
   });
 
-  return uniqueNames;
+  return entries;
 }
 
 function getRafflePool() {
-  const eligible = getRaffleEligibleGuests();
-  return eligible.filter((name) => !raffleState.excludedWinners.has(normalizeKey(name)));
+  return getRaffleEligibleGuests().filter((entry) => !raffleState.excludedWinners.has(entry.id));
 }
 
 function secureRandomInt(max) {
@@ -6941,15 +6952,15 @@ function launchRaffleConfetti() {
   }, theme ? 3400 : 1800);
 }
 
-function finalizeRaffleSpin(winnerName) {
+function finalizeRaffleSpin(winnerEntry) {
   stopRaffleDrumRoll();
 
-  const winner = String(winnerName || '').trim();
+  const winner = String((winnerEntry && winnerEntry.name) || '').trim();
   raffleState.spinning = false;
   raffleState.lastWinner = winner;
 
   if (winner) {
-    raffleState.excludedWinners.add(normalizeKey(winner));
+    raffleState.excludedWinners.add(winnerEntry.id);
     raffleState.winnerHistory.unshift(winner);
     raffleState.winnerHistory = raffleState.winnerHistory.slice(0, RAFFLE_HISTORY_LIMIT);
   }
@@ -6996,7 +7007,7 @@ async function startRaffleSpin() {
     raffleState.statusMessage = `Spinning through ${pool.length} attendees... (sound unavailable on this browser/device)`;
   }
 
-  const winnerName = pool[secureRandomInt(pool.length)];
+  const winnerEntry = pool[secureRandomInt(pool.length)];
   let cursor = secureRandomInt(pool.length);
   const startedAt = Date.now();
   const totalDurationMs = RAFFLE_SPIN_DURATION_MS;
@@ -7010,12 +7021,12 @@ async function startRaffleSpin() {
 
     const elapsed = Date.now() - startedAt;
     if (elapsed >= totalDurationMs) {
-      updateRaffleDisplay(winnerName, { winner: true });
-      finalizeRaffleSpin(winnerName);
+      updateRaffleDisplay(winnerEntry.name, { winner: true });
+      finalizeRaffleSpin(winnerEntry);
       return;
     }
 
-    updateRaffleDisplay(pool[cursor], { winner: false });
+    updateRaffleDisplay(pool[cursor].name, { winner: false });
     cursor = (cursor + 1) % pool.length;
     const progress = elapsed / Math.max(totalDurationMs, 1);
     const delay = 40 + Math.round(progress * progress * 250);
@@ -7043,7 +7054,6 @@ function resetRafflePool() {
 async function refreshRaffleAttendees() {
   if (raffleSyncState.refreshing || raffleState.spinning || raffleState.chestPhase === 'playing') return;
 
-  const before = getRaffleEligibleGuests().length;
   raffleSyncState.refreshing = true;
   raffleSyncState.error = '';
   renderRaffle();
@@ -7069,9 +7079,8 @@ async function refreshRaffleAttendees() {
     }
 
     setActiveGuests(payload.guests);
+    setRaffleApiEntries(payload);
     activeDataSource = 'live';
-    raffleSyncState.syncedAt = payload.generated_at || new Date().toISOString();
-    raffleSyncState.lastDelta = getRaffleEligibleGuests().length - before;
   } catch (error) {
     raffleSyncState.error = error && error.message ? error.message : 'Refresh failed';
   } finally {
@@ -7080,39 +7089,24 @@ async function refreshRaffleAttendees() {
   }
 }
 
-function formatSyncTime(iso) {
-  const date = iso ? new Date(iso) : null;
-  if (!date || Number.isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
-}
-
-function buildRaffleAttendeeBar(eligibleCount) {
-  const isLive = activeDataSource === 'live';
-  const syncTime = formatSyncTime(raffleSyncState.syncedAt);
-  const delta = raffleSyncState.lastDelta;
+function buildRaffleAttendeeBar(eligibleCount, remainingCount) {
   const busy = raffleSyncState.refreshing || raffleState.spinning || raffleState.chestPhase === 'playing';
 
-  let note;
-  if (raffleSyncState.refreshing) note = 'Pulling latest from Luma…';
-  else if (raffleSyncState.error) note = `Refresh failed · ${escapeHtml(raffleSyncState.error)}`;
-  else if (isLive && syncTime) note = `Synced from Luma at ${syncTime}`;
-  else note = 'Backup list · not live';
-
-  let deltaHtml = '';
-  if (!raffleSyncState.refreshing && !raffleSyncState.error && delta !== null) {
-    const label = delta > 0 ? `+${delta} new` : delta < 0 ? `${delta} removed` : 'No change';
-    deltaHtml = `<span class="raffle-attendees-delta${delta > 0 ? ' up' : ''}">${label}</span>`;
-  }
+  // Only speak up when something needs attention or winners have been drawn.
+  let note = '';
+  if (raffleSyncState.refreshing) note = 'Refreshing…';
+  else if (raffleSyncState.error) note = 'Refresh failed · showing last list';
+  else if (activeDataSource !== 'live') note = 'Backup list · not live';
+  else if (remainingCount < eligibleCount) note = `${remainingCount} still in the draw`;
 
   return `
-    <div class="raffle-attendees${raffleSyncState.error ? ' has-error' : ''}">
+    <div class="raffle-attendees${raffleSyncState.error || activeDataSource !== 'live' ? ' has-error' : ''}">
       <div class="raffle-attendees-count">
         <span class="raffle-attendees-number">${eligibleCount}</span>
         <span class="raffle-attendees-label">Attendees</span>
       </div>
       <div class="raffle-attendees-meta">
-        <span class="raffle-attendees-note">${note}</span>
-        ${deltaHtml}
+        ${note ? `<span class="raffle-attendees-note">${note}</span>` : ''}
       </div>
       <button class="raffle-attendees-refresh" id="raffleRefreshBtn" ${busy ? 'disabled' : ''}>
         <span class="raffle-attendees-refresh-icon${raffleSyncState.refreshing ? ' spinning' : ''}" aria-hidden="true">↻</span>
@@ -7141,7 +7135,7 @@ function renderRaffle() {
   const eventPillLabel = (raffleTheme && raffleTheme.eventPill) || activeEventLabel;
   const subtitle =
     activeDataSource === 'live'
-      ? 'Live attendees synced from Luma are in this raffle.'
+      ? ''
       : 'Live sync was unavailable, so this raffle is using backup guest data.';
 
   Object.values(RAFFLE_EVENT_THEMES).forEach((theme) => {
@@ -7162,12 +7156,12 @@ function renderRaffle() {
       <div class="rtheme-microcopy">${raffleTheme.microcopy || ''}</div>
     </div>
     <div class="rtheme-meta-row">${raffleTheme.headerMeta || ''}</div>
-    <p class="rtheme-subtitle">${subtitle}</p>`
+    ${subtitle ? `<p class="rtheme-subtitle">${subtitle}</p>` : '<div class="rtheme-subtitle"></div>'}`
     : `
     <div class="header">
       <div class="header-label">${getHeaderLabel()}</div>
       <h1>Event <span class="highlight">Raffle</span></h1>
-      <p class="subtitle">${subtitle}</p>
+      ${subtitle ? `<p class="subtitle">${subtitle}</p>` : ''}
     </div>`;
 
   app.innerHTML = `
@@ -7175,17 +7169,17 @@ function renderRaffle() {
     <div class="raffle-shell${raffleTheme ? ` ${raffleTheme.shellClass}` : ''}">
       <button class="back-btn" onclick="closeRaffleRoute()">← Back</button>
       <div class="raffle-card">
-        ${buildRaffleAttendeeBar(eligibleCount)}
+        ${buildRaffleAttendeeBar(eligibleCount, remainingCount)}
+        ${raffleTheme ? '' : `
         <div class="raffle-metadata">
           <span class="raffle-meta-pill ${sourceClass}">${sourceLabel}</span>
           <span class="raffle-meta-pill">${eventPillLabel}</span>
-          <span class="raffle-meta-pill">${remainingCount}/${eligibleCount} remaining</span>
-        </div>
+        </div>`}
         <div class="raffle-display" aria-live="polite">
           <div>
             ${chestPhase ? `<div class="raffle-chest-stage ${chestPhase}"></div>` : ''}
             <div class="raffle-display-label">${chestPhase === 'playing' ? 'Opening the chest…' : 'Current pick'}</div>
-            <div class="raffle-name${chestPhase === 'done' ? ' reveal-pop' : ''}" id="raffleName"${chestPhase === 'playing' ? ' style="visibility:hidden"' : ''}>${displayedName || 'Waiting for spin...'}</div>
+            <div class="raffle-name${chestPhase === 'done' ? ' reveal-pop' : ''}" id="raffleName"${chestPhase === 'playing' ? ' style="visibility:hidden"' : ''}>${escapeHtml(displayedName) || 'Waiting for spin...'}</div>
             <div class="raffle-winner-badge" id="raffleWinnerBadge">${raffleState.lastWinner && !raffleState.spinning && chestPhase !== 'playing' ? 'Winner Selected' : ''}</div>
           </div>
           <div class="raffle-confetti" id="raffleConfetti"></div>
@@ -7198,12 +7192,12 @@ function renderRaffle() {
             Reset Winners
           </button>
         </div>
-        <div class="raffle-status">${raffleState.statusMessage || 'Tap spin to select a random winner from this event.'}</div>
+        <div class="raffle-status">${escapeHtml(raffleState.statusMessage) || 'Tap spin to select a random winner from this event.'}</div>
         ${raffleState.winnerHistory.length ? `
           <div class="raffle-history">
             <h4>Recent winners</h4>
             <div class="raffle-history-list">
-              ${raffleState.winnerHistory.map((name) => `<span class="raffle-history-item">${name}</span>`).join('')}
+              ${raffleState.winnerHistory.map((name) => `<span class="raffle-history-item">${escapeHtml(name)}</span>`).join('')}
             </div>
           </div>
         ` : ''}
@@ -7717,8 +7711,8 @@ async function initializeDataSource() {
     }
 
     setActiveGuests(payload.guests);
+    setRaffleApiEntries(payload);
     activeDataSource = 'live';
-    raffleSyncState.syncedAt = payload.generated_at || new Date().toISOString();
     activeEventKey = normalizeKey((payload && payload.event_key) || activeEventKey);
     activeEventApiId = (payload && payload.event_api_id) || activeEventApiId;
     activeEventLabel = formatEventLabel((payload && payload.event_label) || EVENT_PARAM || activeEventApiId || EVENT_ID_PARAM);
