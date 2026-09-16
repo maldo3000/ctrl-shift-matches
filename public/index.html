@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CTRL+SHIFT — Matches</title>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@900&family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@900&family=Inter:wght@200;300&family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -1044,6 +1044,81 @@ body.vol14-raffle-page .footer {
 
 .raffle-theme-vol14 .raffle-chest-stage {
   filter: drop-shadow(0 18px 22px rgba(6, 6, 60, 0.55));
+}
+
+/* Vol 14 secondary type: thin Helvetica Neue for all the small sans,
+   in place of Space Mono. Sizes bump slightly since thin weights read
+   smaller at tiny sizes. */
+body.vol14-raffle-page {
+  --rt-sans: 'Helvetica Neue', 'Inter', Helvetica, Arial, sans-serif;
+}
+
+body.vol14-raffle-page .rtheme-microcopy,
+body.vol14-raffle-page .rtheme-meta-row,
+body.vol14-raffle-page .rtheme-subtitle,
+body.vol14-raffle-page .footer,
+.raffle-theme-vol14 .back-btn,
+.raffle-theme-vol14 .raffle-meta-pill,
+.raffle-theme-vol14 .raffle-display-label,
+.raffle-theme-vol14 .raffle-winner-badge,
+.raffle-theme-vol14 .raffle-status,
+.raffle-theme-vol14 .raffle-history h4,
+.raffle-theme-vol14 .raffle-history-item {
+  font-family: var(--rt-sans);
+  font-weight: 200;
+}
+
+body.vol14-raffle-page .rtheme-microcopy {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+}
+
+body.vol14-raffle-page .rtheme-meta-row {
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+}
+
+body.vol14-raffle-page .rtheme-meta-row .accent {
+  font-weight: 400;
+}
+
+body.vol14-raffle-page .rtheme-subtitle {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.raffle-theme-vol14 .raffle-meta-pill {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+
+.raffle-theme-vol14 .raffle-display-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+}
+
+.raffle-theme-vol14 .raffle-winner-badge {
+  font-size: 0.76rem;
+}
+
+.raffle-theme-vol14 .raffle-status {
+  font-size: 0.84rem;
+  letter-spacing: 0.03em;
+}
+
+.raffle-theme-vol14 .raffle-history h4 {
+  font-size: 0.76rem;
+}
+
+.raffle-theme-vol14 .raffle-history-item {
+  font-size: 0.76rem;
+}
+
+.raffle-theme-vol14 .raffle-btn {
+  font-family: var(--rt-sans);
+  font-weight: 300;
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
 }
 
 /* Treasure chest reveal — transparent 15-frame sprite strip, pops in,
